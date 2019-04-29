@@ -1,7 +1,7 @@
 <template>
   <div class="card is-vcentered">
     <span class="close" @click="$emit('hide-entry', entry)"><md-close title="Hide video"/></span>
-    <div class="column is-two-thirds">
+    <div class="column is-one-thirds">
       <div class="card-image">
         <video ref="plyrEl" />
       </div>
@@ -11,11 +11,9 @@
         <div class="is-pulled-right">
           <div class="watch-btn-container">
             <a class="watch" @click="triggerWatch">
-              <div>
-                <play-circle :size="37" title="Watch on TwoSeven"/>
-                <span v-if="isOnTwoSeven"> Watch Together </span>
-                <span v-else> Watch on TwoSeven </span>
-              </div>
+              <play-circle :size="37" title="Watch on TwoSeven"/>
+              <span v-if="isOnTwoSeven"> Watch Together </span>
+              <span v-else> Watch on TwoSeven </span>
             </a>
           </div>
           <div class="video-info-container">
@@ -142,6 +140,7 @@ export default {
     const defaultControls = ['progress', 'play', 'volume', 'captions', 'settings']
     const { plyrProvider } = this.entry.videoData
     this.plyr = new Plyr(this.$refs.plyrEl, {
+      iconUrl: '/node_modules/plyr/dist/plyr.svg',
       urls: {
         youtube: {
           sdk: '/web_resources/js/youtube/iframe_api.js'

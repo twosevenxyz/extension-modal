@@ -1,21 +1,23 @@
 <template>
   <div id="app">
     <div v-show="Object.keys(hiddenEntries).length > 0">
-      <div class="row">
-        <div class="col s12">
-          <a class="waves waves-effect teal btn right" @click="hiddenEntries = {}">Show hidden media</a>
+      <div class="columns">
+        <div class="column">
+          <div class="is-pulled-right">
+            <button class="button is-primary" @click="hiddenEntries = {}">Show hidden media</button>
+          </div>
         </div>
       </div>
     </div>
     <div v-if="Object.keys(filteredMedia).length > 0">
-      <ul>
+      <ul class="is-paddingless">
         <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="(entry, key) in media" :key="entry.videoData.hash">
           <video-entry :entry="entry" :is-on-two-seven="isOnTwoSeven" @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
         </li>
       </ul>
     </div>
-    <div v-else class="center">
-      <h3>No supported media found!</h3>
+    <div v-else class="has-text-centered">
+      <h3 class="is-3">No supported media found!</h3>
     </div>
   </div>
 </template>
@@ -86,15 +88,31 @@ export default {
 </script>
 
 <style lang="scss">
+$primary: #009688;
 @import 'plyr/src/sass/plyr.scss';
 @import 'bulma/sass/utilities/_all.sass';
+@import 'bulma/sass/base/helpers.sass';
 @import 'bulma/sass/grid/columns.sass';
 @import 'bulma/sass/components/card.sass';
 @import 'bulma/sass/elements/container.sass';
+@import 'bulma/sass/elements/button.sass';
 @import url('https://fonts.googleapis.com/css?family=Roboto');
+
+html {
+  // overflow-y: hidden !important;
+}
+
+body {
+  display: flex !important;
+  flex-direction: column !important;
+}
 
 #app {
   font-family: 'Roboto', sans-serif;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin: 8px;
 }
 
 #twoseven-ext-tab-media-app {
