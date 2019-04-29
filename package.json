@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build --target lib --name modal",
+    "build": "vue-cli-service build",
+    "library": "vue-cli-service build --target lib --name 'modal' ./src/App.vue",
     "lint": "vue-cli-service lint",
     "test:unit": "vue-cli-service test:unit"
   },
