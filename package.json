@@ -17,7 +17,8 @@
     "moment": "^2.24.0",
     "plyr": "^3.5.4",
     "urijs": "^1.19.1",
-    "vue": "^2.6.10"
+    "vue": "^2.6.10",
+    "vue-material-design-icons": "^3.2.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.7.0",
