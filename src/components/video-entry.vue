@@ -137,7 +137,7 @@ export default {
   },
   mounted () {
     const self = this
-    const defaultControls = ['progress', 'play', 'volume', 'captions', 'settings']
+    const defaultControls = ['play', 'progress', 'volume', 'captions', 'settings']
     const { plyrProvider } = this.entry.videoData
     this.plyr = new Plyr(this.$refs.plyrEl, {
       iconUrl: '/node_modules/plyr/dist/plyr.svg',
