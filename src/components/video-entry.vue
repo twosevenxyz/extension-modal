@@ -37,7 +37,6 @@ import Hls from 'hls.js'
 import Plyr from 'plyr'
 import URI from 'urijs'
 import moment from 'moment'
-import is from 'is_js'
 import XhrHelpLoader from '@/js/xhr-helper'
 
 import MdClose from 'vue-material-design-icons/Close'
@@ -188,11 +187,12 @@ export default {
               headers: self.entry.headers
             }, undefined, true)
           },
-          enableWorker: !is.firefox()
+          enableWorker: false
         }
         const hls = new Hls(config)
         hls.loadSource(realUrl)
         hls.attachMedia(this.plyr.media)
+        this.plyr.hls = hls
 
         // Handle changing captions
         this.plyr.on('languagechange', () => {
