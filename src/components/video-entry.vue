@@ -177,6 +177,11 @@ export default {
     if (this.entry.videoSelector === 'web') {
       const url = this.entry.videoURL
       const realUrl = this.url
+      const { entry: { headers } } = self
+      headers.push({
+        name: 'x-from-tab-modal',
+        value: 1
+      })
       if (url.startsWith('hls:')) {
         // This is a HLS video
         const config = {
