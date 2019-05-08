@@ -1,7 +1,7 @@
 <template>
-  <div class="card is-vcentered">
+  <div class="card is-vcentered" :class="widthClass">
     <span class="close" @click="$emit('hide-entry', entry)"><md-close title="Hide video"/></span>
-    <div class="column is-one-thirds">
+    <div class="column is-one-quarter-tablet">
       <div class="card-image">
         <video ref="plyrEl" />
       </div>
@@ -11,15 +11,14 @@
         <div class="is-pulled-right">
           <div class="watch-btn-container">
             <a class="watch" @click="triggerWatch">
-              <play-circle :size="37" title="Watch on TwoSeven"/>
-              <span v-if="isOnTwoSeven"> Watch Together </span>
-              <span v-else> Watch on TwoSeven </span>
+              <play-circle :size="iconSize" title="Watch on TwoSeven"/>
+              <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Watch on TwoSeven' }}</span>
             </a>
           </div>
           <div class="video-info-container">
             <ul>
               <li>
-                <span class="video-title"> {{ title }} </span>
+                <span class="video-title tooltip is-tooltip-top is-tooltip-multiline" :data-tooltip="fullTitle"> {{ title }} </span>
               </li>
               <li>
                 <span class="right video-duration"> Duration: {{ duration }} </span>
@@ -42,9 +41,12 @@ import XhrHelpLoader from '@/js/xhr-helper'
 import MdClose from 'vue-material-design-icons/Close'
 import PlayCircle from 'vue-material-design-icons/PlayCircle'
 
+import BulmaMixin from '@/components/bulma-mixin'
+
 export default {
   name: 'video-entry',
-  props: ['entry', 'isOnTwoSeven'],
+  mixins: [BulmaMixin],
+  props: ['entry', 'isOnTwoSeven', 'width'],
   components: {
     MdClose,
     PlayCircle
@@ -68,17 +70,37 @@ export default {
         return undefined
       }
     },
-    title () {
+    fullTitle () {
+      let title
       const videoData = this.entry.videoData
       if (videoData && videoData.title) {
-        return videoData.title
+        title = videoData.title
       }
-      const filename = this.filename
-      if (filename) {
-        return this.filename.replace(/\.[^/.]+$/, '')
-      } else {
-        return 'Untitled'
+      if (!title) {
+        let { filename } = this
+        if (filename) {
+          title = filename.replace(/\.[^/.]+$/, '')
+        } else {
+          title = 'Untitled'
+        }
       }
+      return title
+    },
+    title () {
+      const { fullTitle: title } = this
+      if (this.isTouch && title.length > 25) {
+        return `${title.substring(0, 22)}...`
+      }
+      return title
+    },
+    iconSize () {
+      if (!this.isDesktop) {
+        return 28
+      }
+      return 36
+    },
+    widthClass () {
+      return this.isTouch ? 'small' : 'med-and-up'
     }
   },
   data: function () {
@@ -133,6 +155,7 @@ export default {
       this.triggerEvent('trigger-watch', self.entry)
       this.triggerEvent('modal-hide', {}, window.parent)
     }
+
   },
   mounted () {
     const self = this
@@ -208,30 +231,75 @@ export default {
         })
       }
     }
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.onResize)
   }
 }
 </script>
 
 <style lang="scss">
+@import '~plyr/src/sass/plyr.scss';
+@import '~bulma-tooltip';
+
+.small {
+  .card-image {
+    width: 200px !important;
+  }
+  .watch {
+    line-height: 28px;
+  }
+  .watch-text {
+    font-size: 22px;
+  }
+  .card-content {
+    .video-info-container {
+      .video-title {
+        font-size: 12px;
+      }
+      .video-duration {
+        font-size: 12px;
+      }
+    }
+  }
+  @-moz-document url-prefix() {
+    .watch .watch-text {
+      font-size: 20px !important;
+      line-height: 28px !important;
+    }
+    .video-info-container {
+      .video-title {
+        font-size: 16px;
+      }
+      .video-duration {
+        font-size: 14px;
+      }
+    }
+  }
+}
+
 .card {
   display: flex;
   flex-direction: row;
+  position: relative;
   .column {
     padding: 0;
   }
 }
 .card-image {
   margin: 1%;
+  min-width: 200px !important;
   width: 240px !important;
 }
 .watch {
   color: #009688;
   cursor: pointer;
+  line-height: 36px;
   &:hover {
     color: #039be5;
     transition: 0.3s
   }
-  span {
+  .watch-text {
     vertical-align: bottom;
     font-size: 28px;
   }
@@ -239,19 +307,13 @@ export default {
 
 .card-content {
   text-align: right;
-  .watch-btn-container {
-  }
-
-  .watch-icon {
-    font-size: 40px !important;
-  }
-
   .video-info-container {
     ul {
       padding-left: 3em;
     }
     .video-title {
       font-size: 16px;
+      text-overflow: ellipsis;
     }
     .video-duration {
       font-size: 14px;
@@ -259,18 +321,19 @@ export default {
   }
 
   @-moz-document url-prefix() {
-    .watch-icon {
-      font-size: 38px !important;
-    }
-    .watch span {
-      font-size: 20px;
+    .watch .watch-text {
+      font-size: 26px;
+      line-height: 36px;
     }
     .video-info-container {
       .video-title {
-        font-size: 16px;
+        font-size: 18px;
+        &.tooltip.is-tooltip-multiline::before {
+          min-width: 12rem;
+        }
       }
       .video-duration {
-        font-size: 12px;
+        font-size: 16px;
       }
     }
   }

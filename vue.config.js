@@ -7,5 +7,12 @@ module.exports = {
         'vue$': 'vue/dist/vue.runtime.js'
       }
     }
+  },
+  css: {
+    loaderOptions: {
+      sass: {
+        data: `@import "./src/style/bulma-imports.scss";`
+      }
+    }
   }
 }

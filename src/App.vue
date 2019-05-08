@@ -12,7 +12,7 @@
     <div v-if="Object.keys(filteredMedia).length > 0">
       <ul class="is-paddingless">
         <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="(entry, key) in media" :key="entry.videoData.hash">
-          <video-entry :entry="entry" :is-on-two-seven="isOnTwoSeven" @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
+          <video-entry :width="width" :entry="entry" :is-on-two-seven="isOnTwoSeven" @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
         </li>
       </ul>
     </div>
@@ -35,7 +35,8 @@ export default {
       media: {},
       dummy: '',
       hiddenEntries: {},
-      isOnTwoSeven: false
+      isOnTwoSeven: false,
+      width: undefined
     }
   },
   computed: {
@@ -51,6 +52,9 @@ export default {
     }
   },
   methods: {
+    onResize () {
+      this.width = window.outerWidth
+    }
   },
   beforeMount () {
     const uri = new URI(window.location.href)
@@ -83,19 +87,18 @@ export default {
       }
     })
     console.log(`Initialized extension modal`)
+    window.addEventListener('resize', this.onResize)
+    this.onResize()
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.onResize)
   }
 }
 </script>
 
 <style lang="scss">
 $primary: #009688;
-@import 'plyr/src/sass/plyr.scss';
-@import 'bulma/sass/utilities/_all.sass';
-@import 'bulma/sass/base/helpers.sass';
-@import 'bulma/sass/grid/columns.sass';
-@import 'bulma/sass/components/card.sass';
-@import 'bulma/sass/elements/container.sass';
-@import 'bulma/sass/elements/button.sass';
+@import './style/bulma-imports.scss';
 @import url('https://fonts.googleapis.com/css?family=Roboto');
 
 html {

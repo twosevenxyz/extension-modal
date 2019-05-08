@@ -21,7 +21,8 @@ const hlsData = {
     'url',
     'iframe'
   ],
-  tabId: 2152
+  tabId: 2152,
+  headers: []
 }
 
 const mp4Data = {
@@ -37,7 +38,8 @@ const mp4Data = {
     hash: 'a603de70da54523e5f5b9ae6f81c3aa4',
     clientID: '471c284a-efc2-4be9-b2ad-f31c8590666a'
   },
-  origin: 'https://www.w3.org'
+  origin: 'https://www.w3.org',
+  headers: []
 }
 
 function randomMediaEntry (type = 'mp4') {
@@ -66,7 +68,13 @@ function randomMedia (numMedia = (3 + (Math.random() * 5) | 0)) {
   return ret
 }
 
+function fakeInitialize () {
+  const media = randomMedia(10)
+  window.app.media = media
+}
+
 export {
   randomMediaEntry,
-  randomMedia
+  randomMedia,
+  fakeInitialize
 }
