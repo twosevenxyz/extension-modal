@@ -8,19 +8,19 @@
     </div>
     <div class="column">
       <div class="card-content">
-        <div class="is-pulled-right">
+        <div class="is-pulled-right" style="width: 100%;">
           <div class="watch-btn-container">
             <a class="watch" @click="triggerWatch">
               <play-circle :size="iconSize" title="Watch on TwoSeven"/>
               <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Watch on TwoSeven' }}</span>
             </a>
           </div>
-          <div class="video-info-container">
-            <ul>
-              <li>
+          <div class="video-info-container is-flex is-pulled-right">
+            <ul class="video-info-ul">
+              <li class="video-info-li">
                 <span class="video-title tooltip is-tooltip-top is-tooltip-multiline" :data-tooltip="fullTitle"> {{ title }} </span>
               </li>
-              <li>
+              <li class="video-info-li">
                 <span class="right video-duration"> Duration: {{ duration }} </span>
               </li>
             </ul>
@@ -254,6 +254,7 @@ export default {
   }
   .card-content {
     .video-info-container {
+      flex-direction: column;
       .video-title {
         font-size: 12px;
       }
@@ -308,12 +309,24 @@ export default {
 .card-content {
   text-align: right;
   .video-info-container {
-    ul {
+    .video-info-ul {
       padding-left: 3em;
+      .video-info-li {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+      }
     }
     .video-title {
       font-size: 16px;
       text-overflow: ellipsis;
+      overflow: hidden;
+      flex: 1;
+      @include until($desktop) {
+        max-width: 200px;
+      }
+      max-width: 400px;
+      white-space: nowrap;
     }
     .video-duration {
       font-size: 14px;
