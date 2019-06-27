@@ -11,7 +11,7 @@
     </div>
     <div v-if="Object.keys(filteredMedia).length > 0">
       <ul class="is-paddingless">
-        <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="(entry, key) in media" :key="entry.videoData.hash">
+        <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="entry in media" :key="entry.videoData.hash">
           <video-entry :width="width" :entry="entry" :is-on-two-seven="isOnTwoSeven" @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
         </li>
       </ul>
@@ -25,8 +25,11 @@
 <script>
 import URI from 'urijs'
 import VideoEntry from './components/video-entry'
+import EventMixin from '@/components/event-mixin'
+
 export default {
   name: 'app',
+  mixins: [EventMixin],
   components: {
     VideoEntry
   },
@@ -97,7 +100,6 @@ export default {
 </script>
 
 <style lang="scss">
-$primary: #009688;
 @import './style/bulma-imports.scss';
 @import url('https://fonts.googleapis.com/css?family=Roboto');
 
