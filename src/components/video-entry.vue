@@ -35,6 +35,7 @@
 import Hls from 'hls.js'
 import Plyr from 'plyr'
 import URI from 'urijs'
+import Shaka from 'shaka-player/dist/shaka-player.compiled.js'
 import moment from 'moment'
 import XhrHelpLoader from '@/js/xhr-helper'
 
@@ -206,6 +207,10 @@ export default {
             hls.subtitleTrack = self.plyr.currentTrack
           }, 50)
         })
+      } else if (url.startsWith('mpd:')) {
+        Shaka.polyfill.installAll()
+        const shaka = new Shaka.Player(this.plyr.media)
+        shaka.load(realUrl)
       }
     }
   },
