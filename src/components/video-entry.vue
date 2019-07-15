@@ -38,12 +38,27 @@ import URI from 'urijs'
 import Shaka from 'shaka-player/dist/shaka-player.compiled.js'
 import moment from 'moment'
 import XhrHelpLoader from '@/js/xhr-helper'
+import subsrt from 'subsrt'
 
 import MdClose from 'vue-material-design-icons/Close'
 import PlayCircle from 'vue-material-design-icons/PlayCircle'
 
 import BulmaMixin from '@/components/bulma-mixin'
 import EventMixin from '@/components/event-mixin'
+
+const oldVTT = subsrt.format['vtt']
+subsrt.format['vtt'] = {
+  name: 'vtt',
+  parse: oldVTT.parse,
+  build (captions, options) {
+    let content = oldVTT.build(captions, options)
+    content = content.replace(/(.*) --> (.*)/g, (match, p1, p2) => {
+      return `${p1.replace(/,/, '.')} --> ${p2.replace(/,/, '.')}`
+    })
+    return content
+  },
+  detect: oldVTT.detect
+}
 
 export default {
   name: 'video-entry',
@@ -138,7 +153,7 @@ export default {
   mounted () {
     const self = this
     const defaultControls = ['play', 'progress', 'volume', 'captions', 'settings']
-    const { plyrProvider } = this.entry.videoData
+    const { plyrProvider, tracks = [] } = this.entry.videoData
     this.plyr = new Plyr(this.$refs.plyrEl, {
       iconUrl: '/node_modules/plyr/dist/plyr.svg',
       urls: {
@@ -153,8 +168,37 @@ export default {
       captions: {
         active: true,
         update: true,
-        language: 'en'
+        language: 'en',
+        upload: {
+          formats: ['srt', 'vtt', 'ssa', 'ass'],
+          enabled: true,
+          callback: true
+        }
       }
+    })
+
+    const { plyr } = this
+    const { config } = plyr
+    const { captions: { upload = {} } } = config
+    const { onProcessed } = upload
+    plyr.once('ready', () => {
+      tracks.forEach(async track => {
+        if (track.format && track.format !== 'vtt') {
+          const r = await fetch(track.src)
+          const text = await r.text()
+          const format = subsrt.detect(text)
+          let vtt = text
+          if (format !== 'vtt') {
+            const captions = subsrt.parse(text)
+            vtt = subsrt.build(captions, { format: 'vtt' })
+          }
+          track.src = URL.createObjectURL(new Blob([vtt], {
+            type: 'text/vtt'
+          }))
+        }
+        const evt = new CustomEvent(onProcessed, { detail: track })
+        plyr.media.dispatchEvent(evt)
+      })
     })
 
     this.plyr.source = {
