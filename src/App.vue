@@ -12,7 +12,7 @@
     <div v-if="Object.keys(filteredMedia).length > 0">
       <ul class="is-paddingless">
         <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="entry in media" :key="entry.videoData.hash">
-          <video-entry :width="width" :entry="entry" :is-on-two-seven="isOnTwoSeven" @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
+          <video-entry :profile="twosevenProfile" :width="width" :entry="entry" :is-on-two-seven="isOnTwoSeven" @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
         </li>
       </ul>
     </div>
@@ -39,7 +39,8 @@ export default {
       dummy: '',
       hiddenEntries: {},
       isOnTwoSeven: false,
-      width: undefined
+      width: undefined,
+      twosevenProfile: undefined
     }
   },
   computed: {
@@ -60,11 +61,14 @@ export default {
     }
   },
   beforeMount () {
+    const browser = window.browser || window.chrome
+    const port = browser.runtime.connect({ name: name })
+    this.port = port
     const uri = new URI(window.location.href)
     const query = uri.query(true)
     this.isOnTwoSeven = query.isOnTwoSeven === 'true'
   },
-  mounted () {
+  async mounted () {
     window.app = this
     if (window.top === window) {
       // Testing
@@ -89,6 +93,23 @@ export default {
           throw new Error(`Unimplemented event '${evt.data.__evt_name}'`)
       }
     })
+
+    const { port } = this
+    const profilePromise = await new Promise(resolve => {
+      port.onMessage.addListener(function once (msg) {
+        if (msg.action !== 'twoseven-profile') {
+          return
+        }
+        port.onMessage.removeListener(once)
+        resolve(msg.profile)
+      })
+      port.postMessage({
+        to: 'auth-bg',
+        action: 'twoseven-profile'
+      })
+    })
+    this.twosevenProfile = await profilePromise
+
     console.log(`Initialized extension modal`)
     window.addEventListener('resize', this.onResize)
     this.onResize()

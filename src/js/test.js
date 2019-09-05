@@ -55,6 +55,20 @@ function randomMediaEntry (type = 'mp4') {
   ret = JSON.parse(JSON.stringify(ret))
   ret.videoURL += `?q=${(Math.random() * 1e6 | 0)}`
   ret.videoData.hash = `${Math.random() * 1e12 | 0}`
+  if (Math.random() > 0.5) {
+    let reason
+    let until
+    if (Math.random() > 0.5) {
+      reason = 'early-access'
+      until = Math.random() > 0.5 ? Date.now() + 50000 : Date.now() - 50000
+    } else {
+      reason = 'patron-only'
+    }
+    ret.videoData.isLocked = {
+      reason,
+      until
+    }
+  }
   return ret
 }
 

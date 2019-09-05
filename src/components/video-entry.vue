@@ -10,13 +10,27 @@
       <div class="card-content">
         <div class="is-pulled-right" style="width: 100%;">
           <div class="watch-btn-container">
-            <a class="watch" @click="triggerWatch">
+            <a v-if="isEntryLocked" class="watch disabled">
+              <Lock :size="iconSize" title="This video is locked"/>
+              <span class="watch-text"> {{ lockedReason }}</span>
+            </a>
+            <a v-else class="watch" @click="triggerWatch">
               <play-circle :size="iconSize" title="Watch on TwoSeven"/>
               <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Watch on TwoSeven' }}</span>
             </a>
           </div>
           <div class="video-info-container is-flex is-pulled-right">
             <ul class="video-info-ul">
+              <li v-if="isEntryLocked" class="video-info-li">
+                <ul style="display: inline-flex; justify-content: flex-end">
+                  <li style="margin: 0 1em;">
+                    <a class="button patron-btn is-small is-link" href="https://patreon.com/twoseven" target="_blank">Patreon</a>
+                  </li>
+                  <li style="margin: 0 1em;">
+                    <a class="button patron-btn is-small is-link" href="https://ko-fi.com/twosevenxyz" target="_blank">Ko-Fi</a>
+                  </li>
+                </ul>
+              </li>
               <li class="video-info-li">
                 <span class="video-title tooltip is-tooltip-top is-tooltip-multiline" :data-tooltip="fullTitle"> {{ title }} </span>
               </li>
@@ -42,6 +56,7 @@ import subsrt from 'subsrt'
 
 import MdClose from 'vue-material-design-icons/Close'
 import PlayCircle from 'vue-material-design-icons/PlayCircle'
+import Lock from 'vue-material-design-icons/Lock'
 
 import BulmaMixin from '@/components/bulma-mixin'
 import EventMixin from '@/components/event-mixin'
@@ -63,10 +78,11 @@ subsrt.format['vtt'] = {
 export default {
   name: 'video-entry',
   mixins: [BulmaMixin, EventMixin],
-  props: ['entry', 'isOnTwoSeven', 'width'],
+  props: ['entry', 'isOnTwoSeven', 'width', 'profile'],
   components: {
     MdClose,
-    PlayCircle
+    PlayCircle,
+    Lock
   },
   computed: {
     twosevenExtHeader () {
@@ -115,6 +131,39 @@ export default {
         return 28
       }
       return 36
+    },
+    isEntryLocked () {
+      const { isLocked = {} } = this.entry.videoData
+      const { reason, until } = isLocked
+      if (!reason) {
+        return false
+      }
+      switch (reason) {
+        case 'early-access':
+          if (this.profile.earlyAccess) {
+            return false
+          }
+          if (until && Date.now() > until) {
+            return false
+          }
+          return true
+        case 'patron-only':
+          return !this.profile.isPatron
+        default:
+          throw new Error(`Unknown reason=${reason}`)
+      }
+    },
+    lockedReason () {
+      const { isLocked = {} } = this.entry.videoData
+      const { reason } = isLocked
+      switch (reason) {
+        case 'early-access':
+          return 'Only available to patrons in early-access tier'
+        case 'patron-only':
+          return 'Only available to patrons'
+        default:
+          return 'This video is locked for an unknown reason'
+      }
     },
     widthClass () {
       return this.isTouch ? 'small' : 'med-and-up'
@@ -330,6 +379,14 @@ export default {
     vertical-align: bottom;
     font-size: 28px;
   }
+  &.disabled {
+    color: grey;
+    cursor: default;
+  }
+}
+
+.patron-btn {
+  text-decoration: none;
 }
 
 .card-content {

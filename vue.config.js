@@ -1,4 +1,5 @@
 const path = require('path')
+const webpack = require('webpack')
 
 function resolve (dir) {
   return path.join(__dirname, dir)
@@ -12,6 +13,11 @@ module.exports = {
       '@': resolve('src'),
       'plyr': path.join(resolve('plyr'), 'src', 'js', 'plyr')
     })
+    config.plugins.push(...[
+      new webpack.DefinePlugin({
+        MODE: `"${process.env.NODE_ENV === 'development' ? 'dev' : 'prod'}"`
+      })
+    ])
   },
   css: {
     loaderOptions: {
