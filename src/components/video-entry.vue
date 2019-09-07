@@ -22,12 +22,12 @@
           <div class="video-info-container is-flex is-pulled-right">
             <ul class="video-info-ul">
               <li v-if="isEntryLocked" class="video-info-li">
-                <ul style="display: inline-flex; justify-content: flex-end">
-                  <li style="margin: 0 1em;">
-                    <a class="button patron-btn is-small is-link" href="https://patreon.com/twoseven" target="_blank">Patreon</a>
+                <ul class="patron-links">
+                  <li>
+                    <Patreon patreon-id="17171070" class="patreon widget" style="display: inline-block; vertical-align: middle;"/>
                   </li>
-                  <li style="margin: 0 1em;">
-                    <a class="button patron-btn is-small is-link" href="https://ko-fi.com/twosevenxyz" target="_blank">Ko-Fi</a>
+                  <li>
+                    <KoFiButton username="twosevenxyz" color="#4b798d" title="Buy us a coffee" class="kofi widget"/>
                   </li>
                 </ul>
               </li>
@@ -58,6 +58,9 @@ import MdClose from 'vue-material-design-icons/Close'
 import PlayCircle from 'vue-material-design-icons/PlayCircle'
 import Lock from 'vue-material-design-icons/Lock'
 
+import Patreon from '@/components/patreon'
+import KoFiButton from '@linusborg/vue-ko-fi-button'
+
 import BulmaMixin from '@/components/bulma-mixin'
 import EventMixin from '@/components/event-mixin'
 
@@ -82,7 +85,9 @@ export default {
   components: {
     MdClose,
     PlayCircle,
-    Lock
+    Lock,
+    Patreon,
+    KoFiButton
   },
   computed: {
     twosevenExtHeader () {
@@ -399,6 +404,17 @@ export default {
         flex: 1;
         flex-direction: column;
       }
+      ul.patron-links {
+        display: inline-flex;
+        justify-content: flex-end;
+        margin-bottom: 4px;
+        li {
+          margin: 0 1em;
+          &:last-child {
+            margin-right: 0;
+          }
+        }
+      }
     }
     .video-title {
       font-size: 16px;
@@ -433,6 +449,30 @@ export default {
       }
     }
   }
+}
+
+.patreon.widget:hover {
+  filter: brightness(120%);
+}
+
+.kofi.widget {
+  vertical-align: top;
+  font-size: 8px !important;
+  min-width: 0 !important;
+  /deep/ .kofi-button {
+    font-size: 12px !important;
+    height: 36px !important;
+    padding: 0px 8px !important;
+    min-width: 0 !important;
+  }
+}
+
+.widget {
+  // height: 20px;
+  line-height: 20px;
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  margin-right: 2px;
 }
 
 /* plyr scroll */
