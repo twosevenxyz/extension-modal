@@ -9,7 +9,7 @@
         </div>
       </div>
     </div>
-    <div v-if="Object.keys(filteredMedia).length > 0">
+    <div v-if="hasFilteredMedia">
       <ul class="is-paddingless">
         <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="entry in media" :key="entry.videoData.hash">
           <video-entry :profile="twosevenProfile" :width="width" :entry="entry" :is-on-two-seven="isOnTwoSeven" @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
@@ -53,6 +53,14 @@ export default {
         }
       })
       return ret
+    },
+    hasFilteredMedia () {
+      const { filteredMedia } = this
+      return Object.keys(filteredMedia).length > 0
+    }
+  },
+  watch: {
+    media (v) {
     }
   },
   methods: {
@@ -62,7 +70,8 @@ export default {
   },
   beforeMount () {
     const browser = window.browser || window.chrome
-    const port = browser.runtime.connect({ name: name })
+    const name = 'tab-media:modal'
+    const port = browser.runtime.connect({ name })
     this.port = port
     const uri = new URI(window.location.href)
     const query = uri.query(true)
@@ -80,7 +89,7 @@ export default {
       }
       switch (evt.data.__evt_name) {
         case 'media-update':
-          window.app.media = evt.data.media
+          window.app.media = evt.data.media || {}
           break
         case 'modal-hide':
           window.app.$children.forEach((child) => {
@@ -109,6 +118,20 @@ export default {
       })
     })
     this.twosevenProfile = await profilePromise
+
+    // Handle media updates
+    port.onMessage.addListener(function (msg) {
+      if (msg.action !== 'media-update') {
+        return
+      }
+      this.media = msg.data || {}
+    }.bind(this))
+
+    port.postMessage({
+      action: 'media-update',
+      to: 'tab-media-bg',
+      from: name
+    })
 
     console.log(`Initialized extension modal`)
     window.addEventListener('resize', this.onResize)
