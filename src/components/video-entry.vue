@@ -279,7 +279,7 @@ export default {
       const { entry: { headers } } = self
       headers.push({
         name: 'x-from-tab-modal',
-        value: 1
+        value: '1'
       })
       if (url.startsWith('hls:')) {
         // This is a HLS video
