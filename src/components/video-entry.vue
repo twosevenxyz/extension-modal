@@ -81,7 +81,7 @@ subsrt.format['vtt'] = {
 export default {
   name: 'video-entry',
   mixins: [BulmaMixin, EventMixin],
-  props: ['entry', 'isOnTwoSeven', 'width', 'profile'],
+  props: ['entry', 'isOnTwoSeven', 'width', 'profile', 'location'],
   components: {
     MdClose,
     PlayCircle,

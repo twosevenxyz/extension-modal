@@ -12,7 +12,7 @@
     <div v-if="hasFilteredMedia">
       <ul class="is-paddingless">
         <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="entry in media" :key="entry.videoData.hash">
-          <video-entry :profile="twosevenProfile" :width="width" :entry="entry" :is-on-two-seven="isOnTwoSeven" @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
+          <video-entry :profile="twosevenProfile" :width="width" :entry="entry" :location="location" :is-on-two-seven="isOnTwoSeven" @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
         </li>
       </ul>
     </div>
@@ -36,6 +36,7 @@ export default {
   data () {
     return {
       media: {},
+      location: {},
       dummy: '',
       hiddenEntries: {},
       isOnTwoSeven: false,
@@ -83,13 +84,18 @@ export default {
       // Testing
       this.$el.classList.add('container')
     }
-    window.addEventListener('message', (evt) => {
+    window.addEventListener('message', function (evt) {
       if (!evt.data || !evt.data.__evt_name) {
         return
       }
+      let media
+      let location
       switch (evt.data.__evt_name) {
         case 'media-update':
-          window.app.media = evt.data.media || {}
+          media = evt.data.media || {}
+          location = evt.data.location || {}
+          this.location = location
+          this.media = media
           break
         case 'modal-hide':
           window.app.$children.forEach((child) => {
@@ -101,7 +107,7 @@ export default {
         default:
           throw new Error(`Unimplemented event '${evt.data.__evt_name}'`)
       }
-    })
+    }.bind(this))
 
     const { port } = this
     const profilePromise = await new Promise(resolve => {
@@ -121,10 +127,13 @@ export default {
 
     // Handle media updates
     port.onMessage.addListener(function (msg) {
-      if (msg.action !== 'media-update') {
+      const { action, data = {} } = msg
+      if (action !== 'media-update') {
         return
       }
-      this.media = msg.data || {}
+      const { media = {}, location = {} } = data
+      this.location = location
+      this.media = media
     }.bind(this))
 
     port.postMessage({
