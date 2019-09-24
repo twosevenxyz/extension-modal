@@ -32,7 +32,10 @@
                 </ul>
               </li>
               <li class="video-info-li">
-                <span class="video-title tooltip is-tooltip-top is-tooltip-multiline" :data-tooltip="fullTitle"> {{ title }} </span>
+                <span class="video-title tooltip is-tooltip-top is-tooltip-multiline" :data-tooltip="fullTitle">
+                  <Alert v-if="premiumContent" :size="alertSize" :title="'Users may need a subscription to ' + location.host + ' to access this video'" class="has-text-warning"/>
+                  {{ title }}
+                </span>
               </li>
               <li class="video-info-li">
                 <span class="right video-duration"> Duration: {{ duration }} </span>
@@ -57,6 +60,7 @@ import subsrt from 'subsrt'
 import MdClose from 'vue-material-design-icons/Close'
 import PlayCircle from 'vue-material-design-icons/PlayCircle'
 import Lock from 'vue-material-design-icons/Lock'
+import Alert from 'vue-material-design-icons/Alert'
 
 import Patreon from '@/components/patreon'
 import KoFiButton from '@linusborg/vue-ko-fi-button'
@@ -83,6 +87,7 @@ export default {
   mixins: [BulmaMixin, EventMixin],
   props: ['entry', 'isOnTwoSeven', 'width', 'profile', 'location'],
   components: {
+    Alert,
     MdClose,
     PlayCircle,
     Lock,
@@ -98,6 +103,9 @@ export default {
         return this.entry.videoURL.substr(4)
       }
       return this.entry.videoURL
+    },
+    premiumContent () {
+      return !!this.entry.videoData.premiumContent
     },
     filename () {
       try {
@@ -136,6 +144,12 @@ export default {
         return 28
       }
       return 36
+    },
+    alertSize () {
+      if (!this.isDesktop) {
+        return 16
+      }
+      return 21
     },
     isEntryLocked () {
       const { isLocked = {} } = this.entry.videoData
@@ -360,6 +374,7 @@ export default {
 }
 
 .card {
+  background-color: inherit;
   display: flex;
   flex-direction: row;
   position: relative;
@@ -396,6 +411,9 @@ export default {
 
 .card-content {
   text-align: right;
+  .has-text-warning {
+    color: #a21200!important
+  }
   .video-info-container {
     .video-info-ul {
       padding-left: 3em;
@@ -403,6 +421,7 @@ export default {
         display: flex;
         flex: 1;
         flex-direction: column;
+        align-items: flex-end;
       }
       ul.patron-links {
         display: inline-flex;
@@ -417,6 +436,9 @@ export default {
       }
     }
     .video-title {
+      /deep/ .material-design-icon {
+        vertical-align: text-bottom;
+      }
       font-size: 16px;
       text-overflow: ellipsis;
       overflow: hidden;
