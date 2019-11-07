@@ -159,13 +159,18 @@ export default {
       }
       switch (reason) {
         case 'early-access':
-          if (this.profile.earlyAccess) {
+          if (this.profile.hasEarlyAccess) {
             return false
           }
           if (until && Date.now() > until) {
             return false
           }
           return true
+        case 'tier': {
+          const { tier } = isLocked
+          const { profile: { isPatron, tier: userTier = null } } = this
+          return !isPatron || userTier < tier
+        }
         case 'patron-only':
           return !this.profile.isPatron
         default:
@@ -177,9 +182,13 @@ export default {
       const { reason } = isLocked
       switch (reason) {
         case 'early-access':
-          return 'Only available to patrons in early-access tier'
+          return 'Only available to TwoSeven patrons in early-access tier'
+        case 'tier': {
+          const { tier } = isLocked
+          return `Only available to TwoSeven patrons in tier-${tier}`
+        }
         case 'patron-only':
-          return 'Only available to patrons'
+          return 'Only available to TwoSeven patrons'
         default:
           return 'This video is locked for an unknown reason'
       }
