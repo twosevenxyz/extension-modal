@@ -390,7 +390,6 @@ export default {
 .watch {
   color: #009688;
   cursor: pointer;
-  line-height: 36px;
   &:hover {
     color: #039be5;
     transition: 0.3s
@@ -427,8 +426,9 @@ export default {
         display: inline-flex;
         justify-content: flex-end;
         margin-bottom: 4px;
+        flex-wrap: wrap;
         li {
-          margin: 0 1em;
+          padding: 0 4px;
           &:last-child {
             margin-right: 0;
           }

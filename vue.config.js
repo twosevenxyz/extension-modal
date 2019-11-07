@@ -22,7 +22,7 @@ module.exports = {
   css: {
     loaderOptions: {
       sass: {
-        data: `@import "./src/style/bulma-imports.scss";`
+        data: `@import "~@/style/bulma-imports.scss";`
       }
     }
   }

@@ -17,7 +17,7 @@
       </ul>
     </div>
     <div v-else class="has-text-centered">
-      <h3 class="is-3">No supported media found!</h3>
+      <h3 class="subtitle is-5">No supported media found!</h3>
     </div>
   </div>
 </template>
@@ -153,11 +153,10 @@ export default {
 </script>
 
 <style lang="scss">
-@import './style/bulma-imports.scss';
-@import url('https://fonts.googleapis.com/css?family=Roboto');
+@import '~typeface-roboto/index.css';
 
 html {
-  // overflow-y: hidden !important;
+  overflow-y: auto;
 }
 
 body {
