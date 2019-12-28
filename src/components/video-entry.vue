@@ -283,7 +283,7 @@ export default {
       sources: [
         {
           src: this.url,
-          type: 'video/mp4',
+          type: this.entry.videoData.plyrContentType,
           provider: this.entry.videoData.plyrProvider
         }
       ],
