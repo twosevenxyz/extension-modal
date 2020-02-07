@@ -37,6 +37,26 @@
                   {{ title }}
                 </span>
               </li>
+              <li v-if="language" class="video-info-li" style="align-items: initial; font-weight: bold;">
+                <div class="columns is-paddingless is-marginless">
+                  <div class="column is-paddingless is-marginless">
+                    <span v-if="language.audio">
+                      Audio: {{ language.audio.language }}
+                      <span v-if="language.audio.country">
+                        ({{ language.audio.country }})
+                      </span>
+                    </span>
+                  </div>
+                  <div class="column is-paddingless is-marginless">
+                    <span v-if="language.hardsub">
+                      Sub: {{ language.hardsub.language }}
+                      <span v-if="language.hardsub.country">
+                        ({{ language.hardsub.country }})
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </li>
               <li class="video-info-li">
                 <span class="right video-duration"> Duration: {{ duration }} </span>
               </li>
@@ -195,6 +215,9 @@ export default {
     },
     widthClass () {
       return this.isTouch ? 'small' : 'med-and-up'
+    },
+    language () {
+      return this.entry.videoData.language
     }
   },
   data: function () {
