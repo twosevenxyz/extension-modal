@@ -142,7 +142,6 @@ export default {
       from: name
     })
 
-    console.log('Initialized extension modal')
     window.addEventListener('resize', this.onResize)
     this.onResize()
   },
