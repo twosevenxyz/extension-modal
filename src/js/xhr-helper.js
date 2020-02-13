@@ -2,10 +2,10 @@ import Hls from 'hls.js'
 
 class XhrHelpLoader extends Hls.DefaultConfig.loader { // eslint-disable-line no-unused-vars
   async loadInternal () {
-    let xhr; let context = this.context
-    xhr = this.loader = new XMLHttpRequest()
+    const context = this.context
+    const xhr = this.loader = new XMLHttpRequest()
 
-    let stats = this.stats
+    const stats = this.stats
     stats.tfirst = 0
     stats.loaded = 0
     const xhrSetup = this.xhrSetup

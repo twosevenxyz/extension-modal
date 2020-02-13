@@ -9,9 +9,9 @@ module.exports = {
   filenameHashing: false,
   configureWebpack: config => {
     Object.assign(config.resolve.alias, {
-      'vue$': 'vue/dist/vue.runtime.js',
+      vue$: 'vue/dist/vue.runtime.js',
       '@': resolve('src'),
-      'plyr': path.join(resolve('plyr'), 'src', 'js', 'plyr')
+      plyr: path.join(resolve('plyr'), 'src', 'js', 'plyr')
     })
     config.plugins.push(...[
       new webpack.DefinePlugin({
@@ -22,7 +22,7 @@ module.exports = {
   css: {
     loaderOptions: {
       sass: {
-        data: `@import "~@/style/bulma-imports.scss";`
+        prependData: '@import "~@/style/bulma-imports.scss";'
       }
     }
   }

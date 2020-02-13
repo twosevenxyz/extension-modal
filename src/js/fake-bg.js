@@ -1,15 +1,5 @@
 import Emittery from 'emittery'
 
-let fakeBG
-
-window.browser = {
-  runtime: {
-    connect () {
-      return fakeBG
-    }
-  }
-}
-
 class FakeBG {
   constructor () {
     const self = this
@@ -40,4 +30,12 @@ class FakeBG {
   }
 }
 
-fakeBG = new FakeBG()
+const fakeBG = new FakeBG()
+
+window.browser = {
+  runtime: {
+    connect () {
+      return fakeBG
+    }
+  }
+}

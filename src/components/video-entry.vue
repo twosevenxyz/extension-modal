@@ -88,8 +88,8 @@ import KoFiButton from '@linusborg/vue-ko-fi-button'
 import BulmaMixin from '@/components/bulma-mixin'
 import EventMixin from '@/components/event-mixin'
 
-const oldVTT = subsrt.format['vtt']
-subsrt.format['vtt'] = {
+const oldVTT = subsrt.format.vtt
+subsrt.format.vtt = {
   name: 'vtt',
   parse: oldVTT.parse,
   build (captions, options) {
@@ -143,7 +143,7 @@ export default {
         title = videoData.title
       }
       if (!title) {
-        let { filename } = this
+        const { filename } = this
         if (filename) {
           title = filename.replace(/\.[^/.]+$/, '')
         } else {
@@ -468,7 +468,7 @@ export default {
       }
     }
     .video-title {
-      /deep/ .material-design-icon {
+      .material-design-icon {
         vertical-align: text-bottom;
       }
       font-size: 16px;
@@ -513,7 +513,7 @@ export default {
   vertical-align: top;
   font-size: 8px !important;
   min-width: 0 !important;
-  /deep/ .kofi-button {
+  .kofi-button {
     font-size: 12px !important;
     height: 36px !important;
     padding: 0px 8px !important;
