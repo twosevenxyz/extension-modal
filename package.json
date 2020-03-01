@@ -7,7 +7,7 @@
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint",
-    "library": "vue-cli-service build --target lib --name 'modal' ./src/App.vue"
+    "library": "vue-cli-service build --target lib --formats umd-min --name modal ./src/App.vue"
   },
   "dependencies": {
     "@linusborg/vue-ko-fi-button": "^0.1.0",
