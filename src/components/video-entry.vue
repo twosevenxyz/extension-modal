@@ -178,7 +178,14 @@ export default {
         return false
       }
       switch (reason) {
-        case 'early-access':
+        case 'early-access': {
+          try {
+            if (this.profile.privileges.EARLY_ACCESS) {
+              return false
+            }
+          } catch (e) {
+          }
+          // TODO: Remove this after extension v2.1.5.5
           if (this.profile.hasEarlyAccess) {
             return false
           }
@@ -186,6 +193,7 @@ export default {
             return false
           }
           return true
+        }
         case 'tier': {
           const { tier } = isLocked
           const { profile: { isPatron, tier: userTier = null } } = this
