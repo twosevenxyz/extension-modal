@@ -57,6 +57,9 @@
                   </div>
                 </div>
               </li>
+              <li class="video-info-li" v-if="warnText">
+                <span class="has-text-warning">{{ warnText }}</span>
+              </li>
               <li class="video-info-li">
                 <span class="right video-duration"> Duration: {{ duration }} </span>
               </li>
@@ -226,6 +229,9 @@ export default {
     },
     language () {
       return this.entry.videoData.language
+    },
+    warnText () {
+      return this.entry.extensionProperties && this.entry.extensionProperties.warnText
     }
   },
   data: function () {
