@@ -204,6 +204,10 @@ export default {
         }
         case 'patron-only':
           return !this.profile.isPatron
+        case 'privilege': {
+          const { value } = isLocked
+          return !this.profile.privileges[value]
+        }
         default:
           throw new Error(`Unknown reason=${reason}`)
       }
@@ -220,6 +224,8 @@ export default {
         }
         case 'patron-only':
           return 'Only available to TwoSeven patrons'
+        case 'privilege':
+          return 'Only available to TwoSeven patrons of eligible tier.'
         default:
           return 'This video is locked for an unknown reason'
       }
