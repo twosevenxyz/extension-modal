@@ -67,6 +67,23 @@ export default {
   methods: {
     onResize () {
       this.width = window.outerWidth
+    },
+    async updateProfile () {
+      const { port } = this
+      const profilePromise = await new Promise(resolve => {
+        port.onMessage.addListener(function once (msg) {
+          if (msg.action !== 'twoseven-profile') {
+            return
+          }
+          port.onMessage.removeListener(once)
+          resolve(msg.profile)
+        })
+        port.postMessage({
+          to: 'auth-bg',
+          action: 'twoseven-profile'
+        })
+      })
+      this.twosevenProfile = await profilePromise
     }
   },
   beforeMount () {
@@ -84,13 +101,17 @@ export default {
       // Testing
       this.$el.classList.add('container')
     }
-    window.addEventListener('message', function (evt) {
+    window.addEventListener('message', async (evt) => {
       if (!evt.data || !evt.data.__evt_name) {
         return
       }
       let media
       let location
       switch (evt.data.__evt_name) {
+        case 'modal-open': {
+          await this.updateProfile()
+          break
+        }
         case 'media-update':
           media = evt.data.media || {}
           location = evt.data.location || {}
@@ -107,23 +128,10 @@ export default {
         default:
           throw new Error(`Unimplemented event '${evt.data.__evt_name}'`)
       }
-    }.bind(this))
+    })
 
     const { port } = this
-    const profilePromise = await new Promise(resolve => {
-      port.onMessage.addListener(function once (msg) {
-        if (msg.action !== 'twoseven-profile') {
-          return
-        }
-        port.onMessage.removeListener(once)
-        resolve(msg.profile)
-      })
-      port.postMessage({
-        to: 'auth-bg',
-        action: 'twoseven-profile'
-      })
-    })
-    this.twosevenProfile = await profilePromise
+    await this.updateProfile()
 
     // Handle media updates
     port.onMessage.addListener(function (msg) {
