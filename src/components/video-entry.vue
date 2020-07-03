@@ -12,7 +12,7 @@
           <div class="watch-btn-container">
             <a v-if="isEntryLocked" class="watch disabled">
               <Lock :size="iconSize" title="This video is locked"/>
-              <span class="watch-text"> {{ lockedReason }}</span>
+              <span class="watch-text" v-html="lockedReason"></span>
             </a>
             <a v-else class="watch" @click="triggerWatch">
               <play-circle :size="iconSize" title="Watch on TwoSeven"/>
