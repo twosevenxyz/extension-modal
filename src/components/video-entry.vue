@@ -78,7 +78,7 @@ import URI from 'urijs'
 import Shaka from 'shaka-player/dist/shaka-player.compiled.js'
 import moment from 'moment'
 import XhrHelpLoader from '@/js/xhr-helper'
-import subsrt from 'subsrt'
+import subsrt from '@gurupras/subsrt'
 
 import MdClose from 'vue-material-design-icons/Close'
 import PlayCircle from 'vue-material-design-icons/PlayCircle'
