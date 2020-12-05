@@ -108,7 +108,27 @@ subsrt.format.vtt = {
 export default {
   name: 'video-entry',
   mixins: [BulmaMixin, EventMixin],
-  props: ['entry', 'isOnTwoSeven', 'width', 'profile', 'location'],
+  props: {
+    entry: {
+      type: Object
+    },
+    isOnTwoSeven: {
+      type: Boolean
+    },
+    width: {
+      type: [String, Number]
+    },
+    profile: {
+      type: Object
+    },
+    location: {
+      type: Object
+    },
+    plyrIconUrl: {
+      type: String,
+      default: '/node_modules/plyr/dist/plyr.svg'
+    }
+  },
   components: {
     Alert,
     MdClose,
@@ -275,7 +295,7 @@ export default {
     const defaultControls = ['play', 'progress', 'volume', 'captions', 'settings']
     const { plyrProvider, tracks = [] } = this.entry.videoData
     this.plyr = new Plyr(this.$refs.plyrEl, {
-      iconUrl: '/node_modules/plyr/dist/plyr.svg',
+      iconUrl: this.plyrIconUrl,
       urls: {
         youtube: {
           sdk: '/web_resources/js/youtube/iframe_api.js'
