@@ -305,7 +305,7 @@ export default {
         }
       },
       controls: plyrProvider ? defaultControls : [],
-      captions: {
+      captions: plyrProvider ? {
         active: true,
         update: true,
         language: 'en',
@@ -314,7 +314,7 @@ export default {
           enabled: true,
           callback: true
         }
-      }
+      } : false
     })
 
     const { plyr } = this
