@@ -1,10 +1,10 @@
 <template>
   <div id="app">
-    <div v-show="Object.keys(hiddenEntries).length > 0">
+    <div class="fade-hide" :class="{show: Object.keys(hiddenEntries).length > 0}">
       <div class="columns">
         <div class="column">
           <div class="is-pulled-right">
-            <button class="button is-primary" @click="hiddenEntries = {}">Show hidden media</button>
+            <button class="button is-primary" style="margin-bottom: 0.4em;" @click="hiddenEntries = {}">Show hidden media</button>
           </div>
         </div>
       </div>
@@ -203,6 +203,16 @@ li {
   list-style-type: none;
   &.entry-container {
     margin-bottom: 12px;
+  }
+}
+
+.fade-hide {
+  transition: opacity 0.3s;
+  opacity: 0;
+  visibility: hidden;
+  &.show {
+    opacity: 1;
+    visibility: visible;
   }
 }
 </style>
