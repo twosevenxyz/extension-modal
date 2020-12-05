@@ -12,10 +12,20 @@
               <Lock :size="iconSize" title="This video is locked"/>
               <span class="watch-text" v-html="lockedReason"></span>
             </a>
-            <a v-else class="watch" @click="triggerWatch">
-              <play-circle :size="iconSize" title="Watch on TwoSeven"/>
-              <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Watch on TwoSeven' }}</span>
-            </a>
+            <div v-else>
+              <div class="watch-option">
+                <a class="queue button is-outlined is-primary primary" @click="triggerWatch">
+                  <play-circle :size="iconSize" class="watch-icon" title="Watch Now"/>
+                  <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Watch Now' }}</span>
+                </a>
+              </div>
+              <div class="watch-option">
+                <a class="queue button is-outlined is-primary primary" @click="triggerQueue">
+                  <PlusBoxMultiple :size="iconSize" class="watch-icon" title="Add to Queue"/>
+                  <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Add to Queue' }}</span>
+                </a>
+              </div>
+            </div>
           </div>
           <div class="video-info-container is-flex is-pulled-right">
             <ul class="video-info-ul">
@@ -82,6 +92,7 @@ import MdClose from 'vue-material-design-icons/Close'
 import PlayCircle from 'vue-material-design-icons/PlayCircle'
 import Lock from 'vue-material-design-icons/Lock'
 import Alert from 'vue-material-design-icons/Alert'
+import PlusBoxMultiple from 'vue-material-design-icons/PlusBoxMultiple'
 
 import Patreon from '@/components/patreon'
 import KoFiButton from '@linusborg/vue-ko-fi-button'
@@ -133,7 +144,8 @@ export default {
     PlayCircle,
     Lock,
     Patreon,
-    KoFiButton
+    KoFiButton,
+    PlusBoxMultiple
   },
   computed: {
     twosevenExtHeader () {
@@ -184,7 +196,7 @@ export default {
       if (!this.isDesktop) {
         return 28
       }
-      return 36
+      return 22
     },
     alertSize () {
       if (!this.isDesktop) {
@@ -235,15 +247,15 @@ export default {
       const { reason } = isLocked
       switch (reason) {
         case 'early-access':
-          return 'Only available to TwoSeven patrons in early-access tier'
+          return 'Only available to TwoSeven supporters in early-access tier'
         case 'tier': {
           const { tier } = isLocked
-          return `Only available to TwoSeven patrons in tier-${tier}`
+          return `Only available to TwoSeven supporters in tier-${tier}`
         }
         case 'patron-only':
-          return 'Only available to TwoSeven patrons'
+          return 'Only available to TwoSeven supporters'
         case 'privilege':
-          return 'Only available to TwoSeven patrons of eligible tier.'
+          return 'Only available to TwoSeven supporters of eligible tier.'
         default:
           return 'This video is locked for an unknown reason'
       }
@@ -282,11 +294,13 @@ export default {
       }
     },
     triggerWatch () {
-      const self = this
-      this.triggerEvent('trigger-watch', self.entry)
+      this.triggerEvent('trigger-watch', this.entry)
+      this.triggerEvent('modal-hide', {}, window.parent)
+    },
+    triggerQueue () {
+      this.triggerEvent('trigger-queue', this.entry)
       this.triggerEvent('modal-hide', {}, window.parent)
     }
-
   },
   mounted () {
     const self = this
@@ -457,20 +471,35 @@ export default {
   min-width: 200px !important;
   width: 240px !important;
 }
-.watch {
-  color: #009688;
+.watch-option {
+  margin: 0.4em 0;
+}
+.watch, .queue {
+  color: #009688 !important;
   cursor: pointer;
-  &:hover {
-    color: #039be5;
-    transition: 0.3s
+  min-width: 210px;
+  &:not(.disabled):hover {
+    background-color: #009688 !important;
+    color: #fff !important;
+    transition: all 0.3s
   }
   .watch-text {
     vertical-align: bottom;
-    font-size: 28px;
+    font-size: 22px;
   }
   &.disabled {
-    color: grey;
+    color: grey !important;
     cursor: default;
+  }
+  .watch-icon {
+    height: 28px;
+    width: 28px;
+    margin-right: 0.4em;
+    svg {
+      width: inherit;
+      height: inherit;
+      vertical-align: middle;
+    }
   }
 }
 
