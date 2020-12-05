@@ -1,10 +1,8 @@
 <template>
   <div class="card is-vcentered" :class="widthClass">
     <span class="close" @click="$emit('hide-entry', entry)"><md-close title="Hide video"/></span>
-    <div class="column is-one-quarter-tablet is-flex">
-      <div class="card-image" style="align-self: center;">
-        <video ref="plyrEl" />
-      </div>
+    <div class="card-image is-flex" style="align-self: center;">
+      <video ref="plyrEl" />
     </div>
     <div class="column">
       <div class="card-content">
