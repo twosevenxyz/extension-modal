@@ -14,13 +14,13 @@
             </a>
             <div v-else>
               <div class="watch-option">
-                <a class="queue button is-outlined is-primary primary" @click="triggerWatch">
+                <a class="queue button is-outlined is-primary primary" @click="triggerWatch()">
                   <play-circle :size="iconSize" class="watch-icon" title="Watch Now"/>
                   <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Watch Now' }}</span>
                 </a>
               </div>
               <div class="watch-option">
-                <a class="queue button is-outlined is-primary primary" @click="triggerQueue">
+                <a class="queue button is-outlined is-primary primary" @click="triggerWatch(true)">
                   <PlusBoxMultiple :size="iconSize" class="watch-icon" title="Add to Queue"/>
                   <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Add to Queue' }}</span>
                 </a>
@@ -293,12 +293,8 @@ export default {
         return entry.value
       }
     },
-    triggerWatch () {
-      this.triggerEvent('trigger-watch', this.entry)
-      this.triggerEvent('modal-hide', {}, window.parent)
-    },
-    triggerQueue () {
-      this.triggerEvent('trigger-queue', this.entry)
+    triggerWatch (onlyQueue = false) {
+      this.triggerEvent('trigger-watch', { mediaEntry: this.entry, onlyQueue })
       this.triggerEvent('modal-hide', {}, window.parent)
     }
   },
