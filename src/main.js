@@ -3,7 +3,6 @@ import Vue from 'vue'
 import App from './App.vue'
 
 ;(async () => {
-  debugger
   if (MODE === 'dev') {
     await import('@/js/fake-bg')
     const Tests = await import('@/js/test')
