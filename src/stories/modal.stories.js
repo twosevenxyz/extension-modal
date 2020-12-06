@@ -22,7 +22,7 @@ export const Basic = () => ({
       </div>
     </div>
     <div class="section is-flex" style="flex: 1">
-      <App plyr-icon-url="https://cdn.plyr.io/3.6.3/plyr.svg" ref="app"/>
+      <App plyr-icon-url="https://cdn.plyr.io/3.6.2/plyr.svg" ref="app"/>
     </div>
   </div>
   `,
