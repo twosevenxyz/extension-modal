@@ -13,7 +13,7 @@
               <span class="watch-text" v-html="lockedReason"></span>
             </a>
             <div v-else>
-              <div class="watch-option">
+              <div class="watch-option" v-if="entry.entryType === 'media'">
                 <a class="queue button is-outlined is-primary primary" @click="triggerWatch()">
                   <play-circle :size="iconSize" class="watch-icon" title="Watch Now"/>
                   <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Watch Now' }}</span>
