@@ -1,5 +1,6 @@
 <template>
-  <div class="card is-vcentered" :class="widthClass">
+  <div class="card is-vcentered" :class="widthClass"
+      v-show="entry.entryType === 'playlist' ? hasPlaylistPrivilege : true">
     <span class="close" @click="$emit('hide-entry', entry)"><md-close title="Hide video"/></span>
     <div class="card-image is-flex">
       <video ref="plyrEl" />
@@ -19,7 +20,7 @@
                   <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Watch Now' }}</span>
                 </a>
               </div>
-              <div class="watch-option">
+              <div class="watch-option" v-show="hasPlaylistPrivilege">
                 <a class="queue button is-outlined is-primary primary" @click="triggerWatch(true)">
                   <PlusBoxMultiple :size="iconSize" class="watch-icon" title="Add to Queue"/>
                   <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Add to Queue' }}</span>
@@ -268,6 +269,9 @@ export default {
     },
     warnText () {
       return this.entry.extensionProperties && this.entry.extensionProperties.warnText
+    },
+    hasPlaylistPrivilege () {
+      return this.hasPrivilege('FEATURE_PLAYLIST')
     }
   },
   data: function () {
@@ -278,6 +282,17 @@ export default {
   },
 
   methods: {
+    hasPrivilege (name) {
+      const { profile } = this
+      if (!profile) {
+        return false
+      }
+      const { privileges } = profile
+      if (!privileges) {
+        return false
+      }
+      return privileges[name]
+    },
     getHeaderEntry (name, headers) {
       var ret
       headers.forEach((entry) => {

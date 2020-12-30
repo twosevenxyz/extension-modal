@@ -12,7 +12,14 @@
     <div v-if="hasFilteredMedia">
       <ul class="is-paddingless">
         <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="entry in media" :key="entry.videoData.hash">
-          <video-entry :plyr-icon-url="plyrIconUrl" :profile="twosevenProfile" :width="width" :entry="entry" :location="location" :is-on-two-seven="isOnTwoSeven" @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
+          <video-entry
+              :plyr-icon-url="plyrIconUrl"
+              :profile="twosevenProfile"
+              :width="width"
+              :entry="entry"
+              :location="location"
+              :is-on-two-seven="isOnTwoSeven"
+              @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
         </li>
       </ul>
     </div>
