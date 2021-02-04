@@ -607,6 +607,12 @@ export default {
   margin-right: 2px;
 }
 
+.plyr {
+  width: 100%;
+  video {
+    height: auto;
+  }
+}
 /* plyr scroll */
 .plyr__menu__container [role="menu"] {
   max-height: 18em;
