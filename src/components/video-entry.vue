@@ -82,7 +82,7 @@
 
 <script>
 import Hls from 'hls.js'
-import Plyr from 'plyr'
+import Plyr from '@twosevenxyz/plyr'
 import URI from 'urijs'
 import Shaka from 'shaka-player/dist/shaka-player.compiled.js'
 import moment from 'moment'
@@ -136,7 +136,7 @@ export default {
     },
     plyrIconUrl: {
       type: String,
-      default: '/node_modules/plyr/dist/plyr.svg'
+      default: '/node_modules/@twosevenxyz/plyr/dist/plyr.svg'
     }
   },
   components: {
