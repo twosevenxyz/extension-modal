@@ -11,7 +11,7 @@
     </div>
     <div v-if="hasFilteredMedia">
       <ul class="is-paddingless">
-        <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="entry in media" :key="entry.videoData.hash">
+        <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="entry in validMedia" :key="entry.videoData.hash">
           <video-entry
               :plyr-icon-url="plyrIconUrl"
               :profile="twosevenProfile"
@@ -70,6 +70,17 @@ export default {
     hasFilteredMedia () {
       const { filteredMedia } = this
       return Object.keys(filteredMedia).length > 0
+    },
+    validMedia () {
+      const { media } = this
+      const ret = {}
+      for (const [key, entry] of Object.entries(media)) {
+        if (!entry.videoURL) {
+          continue
+        }
+        ret[key] = entry
+      }
+      return ret
     }
   },
   watch: {
