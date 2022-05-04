@@ -82,7 +82,7 @@
 
 <script>
 import Hls from 'hls.js'
-import Plyr from '@twosevenxyz/plyr'
+import Plyr from '@twosevenxyz/plyr/dist/plyr'
 import URI from 'urijs'
 import Shaka from 'shaka-player/dist/shaka-player.compiled.js'
 import moment from 'moment'
