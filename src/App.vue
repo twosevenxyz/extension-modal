@@ -1,18 +1,25 @@
 <template>
   <div id="app">
-    <div v-show="Object.keys(hiddenEntries).length > 0">
+    <div class="fade-hide" :class="{show: Object.keys(hiddenEntries).length > 0}">
       <div class="columns">
         <div class="column">
           <div class="is-pulled-right">
-            <button class="button is-primary" @click="hiddenEntries = {}">Show hidden media</button>
+            <button class="button is-primary" style="margin-bottom: 0.4em;" @click="hiddenEntries = {}">Show hidden media</button>
           </div>
         </div>
       </div>
     </div>
     <div v-if="hasFilteredMedia">
       <ul class="is-paddingless">
-        <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="entry in media" :key="entry.videoData.hash">
-          <video-entry :profile="twosevenProfile" :width="width" :entry="entry" :location="location" :is-on-two-seven="isOnTwoSeven" @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
+        <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="entry in validMedia" :key="entry.videoData.hash">
+          <video-entry
+              :plyr-icon-url="plyrIconUrl"
+              :profile="twosevenProfile"
+              :width="width"
+              :entry="entry"
+              :location="location"
+              :is-on-two-seven="isOnTwoSeven"
+              @hide-entry="$set(hiddenEntries, entry.videoData.hash, true)"/>
         </li>
       </ul>
     </div>
@@ -30,6 +37,11 @@ import EventMixin from '@/components/event-mixin'
 export default {
   name: 'app',
   mixins: [EventMixin],
+  props: {
+    plyrIconUrl: {
+      type: String
+    }
+  },
   components: {
     VideoEntry
   },
@@ -58,6 +70,17 @@ export default {
     hasFilteredMedia () {
       const { filteredMedia } = this
       return Object.keys(filteredMedia).length > 0
+    },
+    validMedia () {
+      const { media } = this
+      const ret = {}
+      for (const [key, entry] of Object.entries(media)) {
+        if (!entry.videoURL) {
+          continue
+        }
+        ret[key] = entry
+      }
+      return ret
     }
   },
   watch: {
@@ -203,6 +226,16 @@ li {
   list-style-type: none;
   &.entry-container {
     margin-bottom: 12px;
+  }
+}
+
+.fade-hide {
+  transition: opacity 0.3s;
+  opacity: 0;
+  visibility: hidden;
+  &.show {
+    opacity: 1;
+    visibility: visible;
   }
 }
 </style>

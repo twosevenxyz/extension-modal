@@ -42,7 +42,38 @@ const mp4Data = {
   headers: []
 }
 
-function randomMediaEntry (type = 'mp4') {
+const netflixData = {
+  from: 'netflix/cs/media-finder.js',
+  videoSelector: 'netflix',
+  videoURL: 'https://www.netflix.com/watch/80018294',
+  videoData: {
+    title: "Marvel's Daredevil - Rabbit in a Snowstorm",
+    poster: 'https://occ-0-621-616.1.nflxso.net/dnm/api/v6/X194eJsgWBDE2aQbaNdmCXGUP-Y/AAAABdz0zEgQRNl2d7crMB7ddDsa7_TLjA6qAO2KQVdCMGtikxT106Jh2gTX4FAhnJ2uXZlD0hTBYeBW-ekNee82rcp6T8Fl8JteUOB0mNwsxVnA4oUB0tjeWotteHKrnQ.jpg?r=80f',
+    seasonIndex: 0,
+    episodeIndex: 2,
+    showTitle: "Marvel's Daredevil",
+    episodeTitle: 'Rabbit in a Snowstorm',
+    topURL: 'https://www.netflix.com/watch/80018294',
+    hash: 'd0f679ba7e08e594af18d2d1cf8952ea',
+    clientID: 'a2601ad6-2da3-49bf-911c-f6455e92b130',
+    tracks: []
+  },
+  referer: 'https://www.netflix.com/watch/80018294',
+  origin: 'https://www.netflix.com/watch/80018294',
+  strategies: null,
+  headers: [
+    {
+      name: 'x-twoseven-ext-tab-media',
+      value: '1'
+    }
+  ],
+  listeners: {},
+  hash: 'd0f679ba7e08e594af18d2d1cf8952ea',
+  mediaHandlerHash: '0:10882df52e45c3a0ad7561a1cac06011',
+  tabId: 1255
+}
+
+export function randomMediaEntry (type = 'mp4') {
   let ret = null
   switch (type) {
     case 'mp4':
@@ -50,6 +81,9 @@ function randomMediaEntry (type = 'mp4') {
       break
     case 'hls':
       ret = hlsData
+      break
+    case 'netflix':
+      ret = netflixData
       break
   }
   ret = JSON.parse(JSON.stringify(ret))
@@ -72,7 +106,7 @@ function randomMediaEntry (type = 'mp4') {
   return ret
 }
 
-function randomMedia (numMedia = (3 + (Math.random() * 5) | 0)) {
+export function randomMedia (numMedia = (3 + (Math.random() * 5) | 0)) {
   const ret = {}
   for (let idx = 0; idx < numMedia; idx++) {
     const type = Math.random() > 0.5 ? 'hls' : 'mp4'
@@ -82,13 +116,7 @@ function randomMedia (numMedia = (3 + (Math.random() * 5) | 0)) {
   return ret
 }
 
-function fakeInitialize () {
+export function fakeInitialize () {
   const media = randomMedia(10)
   window.app.media = media
-}
-
-export {
-  randomMediaEntry,
-  randomMedia,
-  fakeInitialize
 }
