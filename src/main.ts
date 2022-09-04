@@ -1,5 +1,5 @@
 /* global MODE */
-import Vue from 'vue'
+import { createApp } from 'vue'
 import App from './App.vue'
 
 ;(async () => {
@@ -7,14 +7,11 @@ import App from './App.vue'
     await import('@/js/fake-bg')
     const Tests = await import('@/js/test')
     const { randomMediaEntry, randomMedia, fakeInitialize } = Tests
-    window.randomMedia = randomMedia
-    window.randomMediaEntry = randomMediaEntry
-    window.fakeInitialize = fakeInitialize
+    ;(window as any).randomMedia = randomMedia
+    ;(window as any).randomMediaEntry = randomMediaEntry
+    ;(window as any).fakeInitialize = fakeInitialize
   }
 
-  Vue.config.productionTip = false
-
-  new Vue({
-    render: h => h(App)
-  }).$mount('#app')
+  const app = createApp(App)
+  app.mount('#app')
 })()

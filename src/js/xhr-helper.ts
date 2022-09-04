@@ -3,12 +3,12 @@ import Hls from 'hls.js'
 class XhrHelpLoader extends Hls.DefaultConfig.loader { // eslint-disable-line no-unused-vars
   async loadInternal () {
     const context = this.context
-    const xhr = this.loader = new XMLHttpRequest()
+    const xhr = (this as any).loader = new XMLHttpRequest()
 
     const stats = this.stats
-    stats.tfirst = 0
-    stats.loaded = 0
-    const xhrSetup = this.xhrSetup
+    ;(stats as any).tfirst = 0
+    ;(stats as any).loaded = 0
+    const xhrSetup = (this as any).xhrSetup
 
     try {
       if (xhrSetup) {
@@ -26,7 +26,7 @@ class XhrHelpLoader extends Hls.DefaultConfig.loader { // eslint-disable-line no
       }
     } catch (e) {
       // IE11 throws an exception on xhr.open if attempting to access an HTTP resource over HTTPS
-      this.callbacks.onError({ code: xhr.status, text: e.message }, context, xhr)
+      (this as any).callbacks.onError({ code: xhr.status, text: e.message }, context, xhr)
       return
     }
 
@@ -34,12 +34,12 @@ class XhrHelpLoader extends Hls.DefaultConfig.loader { // eslint-disable-line no
       xhr.setRequestHeader('Range', 'bytes=' + context.rangeStart + '-' + (context.rangeEnd - 1))
     }
 
-    xhr.onreadystatechange = this.readystatechange.bind(this)
-    xhr.onprogress = this.loadprogress.bind(this)
-    xhr.responseType = context.responseType
+    xhr.onreadystatechange = (this as any).readystatechange.bind(this)
+    xhr.onprogress = (this as any).loadprogress.bind(this) as typeof xhr.onprogress
+    (xhr as any).responseType = (context as any).responseType
 
     // setup timeout before we perform request
-    this.requestTimeout = window.setTimeout(this.loadtimeout.bind(this), this.config.timeout)
+    ;(this as any).requestTimeout = window.setTimeout((this as any).loadtimeout.bind(this), (this as any).config.timeout)
     xhr.send()
   }
 }

@@ -107,7 +107,7 @@ export function randomMediaEntry (type = 'mp4') {
 }
 
 export function randomMedia (numMedia = (3 + (Math.random() * 5) | 0)) {
-  const ret = {}
+  const ret: any = {}
   for (let idx = 0; idx < numMedia; idx++) {
     const type = Math.random() > 0.5 ? 'hls' : 'mp4'
     const media = randomMediaEntry(type)
@@ -118,5 +118,5 @@ export function randomMedia (numMedia = (3 + (Math.random() * 5) | 0)) {
 
 export function fakeInitialize () {
   const media = randomMedia(10)
-  window.app.media = media
+  ;(window as any).app.media.value = media
 }

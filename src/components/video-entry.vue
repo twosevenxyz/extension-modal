@@ -1,3 +1,202 @@
+<script setup lang="ts">
+import { computed, defineComponent, onMounted, ref } from 'vue'
+import Hls from 'hls.js'
+// @ts-ignore
+import Plyr from '@twosevenxyz/plyr/dist/plyr'
+import URI from 'urijs'
+// @ts-ignore
+import Shaka from 'shaka-player/dist/shaka-player.compiled.js'
+import moment from 'moment'
+import XhrHelpLoader from '../js/xhr-helper'
+import subsrt from '@gurupras/subsrt'
+
+import Patreon from '../components/patreon.vue'
+import KoFiButton from '../components/ko-fi.vue'
+import { triggerEvent } from '../js/utils'
+import bulmaMixin from '../js/bulma-mixin'
+
+const oldVTT = subsrt.format.vtt
+subsrt.format.vtt = {
+  name: 'vtt',
+  parse: oldVTT.parse,
+  build (captions: any, options: any) {
+    let content = oldVTT.build(captions, options)
+    content = content.replace(/(.*) --> (.*)/g, (match: any, p1: any, p2: any) => {
+      return `${p1.replace(/,/, '.')} --> ${p2.replace(/,/, '.')}`
+    })
+    return content
+  },
+  detect: oldVTT.detect
+}
+
+const props = defineProps<{
+  entry: any,
+  isOnTwoSeven: boolean,
+  width: String | number,
+  profile: any,
+  location: typeof window.location,
+  plyrIconUrl?: String
+}>()
+
+const plyrIconUrl = props.plyrIconUrl || '/node_modules/@twosevenxyz/plyr/dist/plyr.svg'
+
+let plyr: any
+const plyrEl = ref(null)
+const duration = ref(0.0)
+const { isTouch, isDesktop } = bulmaMixin(() => props.width as number)
+
+const url = computed(() => {
+  if (props.entry.videoURL.indexOf('http') > 0) {
+    return props.entry.videoURL.substr(4)
+  }
+  return props.entry.videoURL
+})
+
+const premiumContent = computed(() => {
+  return !!props.entry.videoData.premiumContent
+})
+
+const filename = computed(() => {
+  try {
+    const uri = new URI(url)
+    const filename = uri.filename()
+    return filename
+  } catch (e) {
+    return undefined
+  }
+})
+
+const fullTitle = computed(() => {
+  let title: string = ''
+  const videoData = props.entry.videoData
+  if (videoData && videoData.title) {
+    title = videoData.title
+  }
+  if (!title) {
+    if (filename.value) {
+      title = filename.value.replace(/\.[^/.]+$/, '')
+    } else {
+      title = 'Untitled'
+    }
+  }
+  return title
+})
+
+const title = computed(() => {
+  if (isTouch && fullTitle.value.length > 25) {
+    return `${fullTitle.value.substring(0, 22)}...`
+  }
+  return fullTitle.value
+})
+
+const iconSize = computed(() => {
+  if (!isDesktop) {
+    return 28
+  }
+  return 22
+})
+
+const alertSize = computed(() => {
+  if (!isDesktop) {
+    return 16
+  }
+  return 21
+})
+
+const isEntryLocked = computed(() => {
+  const { isLocked = {} } = props.entry.videoData
+  const { reason, until } = isLocked
+  if (!reason) {
+    return false
+  }
+  switch (reason) {
+    case 'early-access': {
+      try {
+        if (props.profile.privileges.EARLY_ACCESS) {
+          return false
+        }
+      } catch (e) {
+      }
+      if (until && Date.now() > until) {
+        return false
+      }
+      return true
+    }
+    case 'tier': {
+      const { tier } = isLocked
+      const { isPatron, tier: userTier = null } = props.profile
+      return !isPatron || userTier < tier
+    }
+    case 'patron-only':
+      return !props.profile.isPatron
+    case 'privilege': {
+      const { value } = isLocked
+      return !props.profile.privileges[value]
+    }
+    default:
+      throw new Error(`Unknown reason=${reason}`)
+  }
+})
+
+const lockedReason = computed(() => {
+  const { isLocked = {} } = props.entry.videoData
+  const { reason } = isLocked
+  switch (reason) {
+    case 'early-access':
+      return 'Only available to TwoSeven supporters in early-access tier'
+    case 'tier': {
+      const { tier } = isLocked
+      return `Only available to TwoSeven supporters in tier-${tier}`
+    }
+    case 'patron-only':
+      return 'Only available to TwoSeven supporters'
+    case 'privilege':
+      return 'Only available to TwoSeven supporters of eligible tier.'
+    default:
+      return 'This video is locked for an unknown reason'
+  }
+})
+
+const widthClass = computed(() => {
+  return isTouch ? 'small' : 'med-and-up'
+})
+
+const language = computed(() => {
+  return props.entry.videoData.language
+})
+
+const warnText = computed(() => {
+  return props.entry.extensionProperties && props.entry.extensionProperties.warnText
+})
+
+const hasPlaylistPrivilege = computed(() => {
+  return hasPrivilege('FEATURE_PLAYLIST')
+})
+
+const hasPrivilege = (name: string) => {
+  if (!props.profile) {
+    return false
+  }
+  const { privileges } = props.profile
+  if (!privileges) {
+    return false
+  }
+  return privileges[name]
+}
+
+const triggerWatch = (onlyQueue = false) => {
+  triggerEvent('trigger-watch', { mediaEntry: props.entry, onlyQueue }, props.isOnTwoSeven)
+  ;(window.top as typeof window).postMessage({
+    action: 'twoseven:modal:hide'
+  }, '*')
+}
+
+onMounted(async () => {
+
+})
+
+</script>
+
 <template>
   <div class="card is-vcentered" :class="widthClass"
       v-show="entry.entryType === 'playlist' ? hasPlaylistPrivilege : true">
@@ -80,244 +279,12 @@
   </div>
 </template>
 
-<script>
-import Hls from 'hls.js'
-import Plyr from '@twosevenxyz/plyr/dist/plyr'
-import URI from 'urijs'
-import Shaka from 'shaka-player/dist/shaka-player.compiled.js'
-import moment from 'moment'
-import XhrHelpLoader from '@/js/xhr-helper'
-import subsrt from '@gurupras/subsrt'
-
-import MdClose from 'vue-material-design-icons/Close'
-import PlayCircle from 'vue-material-design-icons/PlayCircle'
-import Lock from 'vue-material-design-icons/Lock'
-import Alert from 'vue-material-design-icons/Alert'
-import PlusBoxMultiple from 'vue-material-design-icons/PlusBoxMultiple'
-
-import Patreon from '@/components/patreon'
-import KoFiButton from '@linusborg/vue-ko-fi-button'
-
-import BulmaMixin from '@/components/bulma-mixin'
-import EventMixin from '@/components/event-mixin'
-
-const oldVTT = subsrt.format.vtt
-subsrt.format.vtt = {
-  name: 'vtt',
-  parse: oldVTT.parse,
-  build (captions, options) {
-    let content = oldVTT.build(captions, options)
-    content = content.replace(/(.*) --> (.*)/g, (match, p1, p2) => {
-      return `${p1.replace(/,/, '.')} --> ${p2.replace(/,/, '.')}`
-    })
-    return content
-  },
-  detect: oldVTT.detect
-}
-
-export default {
-  name: 'video-entry',
-  mixins: [BulmaMixin, EventMixin],
-  props: {
-    entry: {
-      type: Object
-    },
-    isOnTwoSeven: {
-      type: Boolean
-    },
-    width: {
-      type: [String, Number]
-    },
-    profile: {
-      type: Object
-    },
-    location: {
-      type: Object
-    },
-    plyrIconUrl: {
-      type: String,
-      default: '/node_modules/@twosevenxyz/plyr/dist/plyr.svg'
-    }
-  },
-  components: {
-    Alert,
-    MdClose,
-    PlayCircle,
-    Lock,
-    Patreon,
-    KoFiButton,
-    PlusBoxMultiple
-  },
-  computed: {
-    twosevenExtHeader () {
-      return this.getHeaderValue('x-twoseven-ext', this.entry.headers)
-    },
-    url () {
-      if (this.entry.videoURL.indexOf('http') > 0) {
-        return this.entry.videoURL.substr(4)
-      }
-      return this.entry.videoURL
-    },
-    premiumContent () {
-      return !!this.entry.videoData.premiumContent
-    },
-    filename () {
-      try {
-        const uri = new URI(this.url)
-        const filename = uri.filename()
-        return filename
-      } catch (e) {
-        return undefined
-      }
-    },
-    fullTitle () {
-      let title
-      const videoData = this.entry.videoData
-      if (videoData && videoData.title) {
-        title = videoData.title
-      }
-      if (!title) {
-        const { filename } = this
-        if (filename) {
-          title = filename.replace(/\.[^/.]+$/, '')
-        } else {
-          title = 'Untitled'
-        }
-      }
-      return title
-    },
-    title () {
-      const { fullTitle: title } = this
-      if (this.isTouch && title.length > 25) {
-        return `${title.substring(0, 22)}...`
-      }
-      return title
-    },
-    iconSize () {
-      if (!this.isDesktop) {
-        return 28
-      }
-      return 22
-    },
-    alertSize () {
-      if (!this.isDesktop) {
-        return 16
-      }
-      return 21
-    },
-    isEntryLocked () {
-      const { isLocked = {} } = this.entry.videoData
-      const { reason, until } = isLocked
-      if (!reason) {
-        return false
-      }
-      switch (reason) {
-        case 'early-access': {
-          try {
-            if (this.profile.privileges.EARLY_ACCESS) {
-              return false
-            }
-          } catch (e) {
-          }
-          // TODO: Remove this after extension v2.1.5.5
-          if (this.profile.hasEarlyAccess) {
-            return false
-          }
-          if (until && Date.now() > until) {
-            return false
-          }
-          return true
-        }
-        case 'tier': {
-          const { tier } = isLocked
-          const { profile: { isPatron, tier: userTier = null } } = this
-          return !isPatron || userTier < tier
-        }
-        case 'patron-only':
-          return !this.profile.isPatron
-        case 'privilege': {
-          const { value } = isLocked
-          return !this.profile.privileges[value]
-        }
-        default:
-          throw new Error(`Unknown reason=${reason}`)
-      }
-    },
-    lockedReason () {
-      const { isLocked = {} } = this.entry.videoData
-      const { reason } = isLocked
-      switch (reason) {
-        case 'early-access':
-          return 'Only available to TwoSeven supporters in early-access tier'
-        case 'tier': {
-          const { tier } = isLocked
-          return `Only available to TwoSeven supporters in tier-${tier}`
-        }
-        case 'patron-only':
-          return 'Only available to TwoSeven supporters'
-        case 'privilege':
-          return 'Only available to TwoSeven supporters of eligible tier.'
-        default:
-          return 'This video is locked for an unknown reason'
-      }
-    },
-    widthClass () {
-      return this.isTouch ? 'small' : 'med-and-up'
-    },
-    language () {
-      return this.entry.videoData.language
-    },
-    warnText () {
-      return this.entry.extensionProperties && this.entry.extensionProperties.warnText
-    },
-    hasPlaylistPrivilege () {
-      return this.hasPrivilege('FEATURE_PLAYLIST')
-    }
-  },
-  data: function () {
-    return {
-      plyr: undefined,
-      duration: 0.0
-    }
-  },
-
-  methods: {
-    hasPrivilege (name) {
-      const { profile } = this
-      if (!profile) {
-        return false
-      }
-      const { privileges } = profile
-      if (!privileges) {
-        return false
-      }
-      return privileges[name]
-    },
-    getHeaderEntry (name, headers) {
-      var ret
-      headers.forEach((entry) => {
-        if (!!entry.name && entry.name.toLowerCase() === name.toLowerCase()) {
-          ret = entry
-        }
-      })
-      return ret
-    },
-    getHeaderValue (name, headers) {
-      const entry = this.getHeaderEntry(name, headers)
-      if (entry) {
-        return entry.value
-      }
-    },
-    triggerWatch (onlyQueue = false) {
-      this.triggerEvent('trigger-watch', { mediaEntry: this.entry, onlyQueue })
-      this.triggerEvent('modal-hide', {}, window.parent)
-    }
-  },
+<script lang="ts">
+export default defineComponent({
   mounted () {
-    const self = this
     const defaultControls = ['play', 'progress', 'volume', 'captions', 'settings']
-    const { plyrProvider, tracks = [] } = this.entry.videoData
-    this.plyr = new Plyr(this.$refs.plyrEl, {
+    const { plyrProvider, tracks = [] }: { plyrProvider: string, tracks: any[] } = this.entry.videoData
+    this.plyr = new Plyr(this.$refs.plyrEl.value, {
       iconUrl: this.plyrIconUrl,
       urls: {
         youtube: {
@@ -328,23 +295,24 @@ export default {
         }
       },
       controls: plyrProvider ? defaultControls : [],
-      captions: plyrProvider ? {
-        active: true,
-        update: true,
-        language: 'en',
-        upload: {
-          formats: ['srt', 'vtt', 'ssa', 'ass'],
-          enabled: true,
-          callback: true
-        }
-      } : false
+      captions: plyrProvider
+        ? {
+            active: true,
+            update: true,
+            language: 'en',
+            upload: {
+              formats: ['srt', 'vtt', 'ssa', 'ass'],
+              enabled: true,
+              callback: true
+            }
+          }
+        : false
     })
 
-    const { plyr } = this
-    const { config } = plyr
+    const { config } = this.plyr
     const { captions: { upload = {} } } = config
     const { onProcessed } = upload
-    plyr.once('ready', () => {
+    this.plyr.once('ready', () => {
       tracks.forEach(async track => {
         if (track.format && track.format !== 'vtt') {
           const r = await fetch(track.src)
@@ -360,7 +328,7 @@ export default {
           }))
         }
         const evt = new CustomEvent(onProcessed, { detail: track })
-        plyr.media.dispatchEvent(evt)
+        this.plyr.media.dispatchEvent(evt)
       })
     })
 
@@ -377,28 +345,28 @@ export default {
     }
 
     this.plyr.on('loadedmetadata', () => {
-      const duration = self.plyr.duration
+      const duration = this.plyr.duration
       const durationStr = moment().startOf('day').seconds(duration).format('HH:mm:ss')
-      self.duration = durationStr
+      duration.value = durationStr
     })
 
     if (this.entry.videoSelector === 'web') {
       const url = this.entry.videoURL
-      const realUrl = this.url
-      const { entry: { headers } } = self
+      const realUrl = url
+      const { headers } = this.entry
       headers.push({
         name: 'x-from-tab-modal',
         value: '1'
       })
       if (url.startsWith('hls:')) {
-        // This is a HLS video
+      // This is a HLS video
         const config = {
           loader: XhrHelpLoader,
-          async xhrSetup (xhr, realUrl) {
-            await self.triggerEvent('xhr-help', {
+          async xhrSetup (xhr: any, realUrl: string) {
+            await triggerEvent('xhr-help', {
               url: realUrl,
-              headers: self.entry.headers
-            }, undefined, true)
+              headers: this.entry.headers
+            }, this.isOnTwoSeven)
           },
           enableWorker: false
         }
@@ -409,9 +377,9 @@ export default {
 
         // Handle changing captions
         this.plyr.on('languagechange', () => {
-          // Caption support is still flaky. See: https://github.com/sampotts/plyr/issues/994
+        // Caption support is still flaky. See: https://github.com/sampotts/plyr/issues/994
           setTimeout(() => {
-            hls.subtitleTrack = self.plyr.currentTrack
+            hls.subtitleTrack = this.plyr.currentTrack
           }, 50)
         })
       } else if (url.startsWith('mpd:')) {
@@ -420,16 +388,13 @@ export default {
         shaka.load(realUrl)
       }
     }
-  },
-  beforeDestroy () {
-    window.removeEventListener('resize', this.onResize)
   }
-}
+})
 </script>
-
 <style lang="scss">
-@import '~@/../plyr/src/sass/plyr.scss';
-@import '~bulma-tooltip';
+@import '../style/bulma-imports.scss';
+@import '@twosevenxyz/plyr/src/sass/plyr.scss';
+@import 'bulma-tooltip';
 
 .small {
   .card-image {

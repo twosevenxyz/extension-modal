@@ -6,12 +6,13 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'patreon',
+<script lang="ts">
+import { defineComponent } from 'vue'
+
+export default defineComponent({
   mounted () {
   }
-}
+})
 </script>
 
 <style lang="scss" scoped>

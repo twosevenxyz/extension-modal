@@ -1,20 +1,23 @@
 import Emittery from 'emittery'
 
 class FakeBG {
+  emittery: Emittery
+  onMessage: any
+
   constructor () {
     const self = this
     this.emittery = new Emittery()
     this.onMessage = {
-      addListener (fn) {
+      addListener (fn: () => void) {
         self.emittery.on('message', fn)
       },
-      removeListener (fn) {
+      removeListener (fn: () => void) {
         self.emittery.off('message', fn)
       }
     }
   }
 
-  postMessage (data) {
+  postMessage (data: any) {
     const { action } = data
     switch (action) {
       case 'twoseven-profile':
@@ -32,7 +35,7 @@ class FakeBG {
 
 const fakeBG = new FakeBG()
 
-window.browser = {
+;(window as any).browser = {
   runtime: {
     connect () {
       return fakeBG
