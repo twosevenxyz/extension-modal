@@ -9,12 +9,15 @@
         </div>
       </div>
     </div>
-    <div v-if="hasFilteredMedia">
+    <div v-if="profile && hasFilteredMedia">
       <ul class="is-paddingless">
         <li class="entry-container" v-show="!hiddenEntries[entry.videoData.hash]" v-for="entry in validMedia" :key="entry.videoData.hash">
           <video-entry
+              :get-url="getUrl"
+              :on-message="onMessage"
+              :send-message="sendMessage"
               :plyr-icon-url="plyrIconUrl"
-              :profile="twosevenProfile"
+              :profile="profile"
               :width="width"
               :entry="entry"
               :location="location"
@@ -40,6 +43,15 @@ export default {
   props: {
     plyrIconUrl: {
       type: String
+    },
+    getUrl: {
+      type: Function
+    },
+    onMessage: {
+      type: Function
+    },
+    sendMessage: {
+      type: Function
     }
   },
   components: {
@@ -47,13 +59,14 @@ export default {
   },
   data () {
     return {
+      show: false,
       media: {},
       location: {},
       dummy: '',
       hiddenEntries: {},
       isOnTwoSeven: false,
       width: undefined,
-      twosevenProfile: undefined
+      profile: undefined
     }
   },
   computed: {
@@ -85,6 +98,14 @@ export default {
   },
   watch: {
     media (v) {
+    },
+    async show (v) {
+      if (v) {
+        await Promise.all([
+          this.updateProfile(),
+          this.updateMedia()
+        ])
+      }
     }
   },
   methods: {
@@ -92,86 +113,37 @@ export default {
       this.width = window.outerWidth
     },
     async updateProfile () {
-      const { port } = this
-      const profilePromise = await new Promise(resolve => {
-        port.onMessage.addListener(function once (msg) {
-          if (msg.action !== 'twoseven-profile') {
-            return
-          }
-          port.onMessage.removeListener(once)
-          resolve(msg.profile)
-        })
-        port.postMessage({
-          to: 'auth-bg',
-          action: 'twoseven-profile'
-        })
-      })
-      this.twosevenProfile = await profilePromise
+      const result = await this.sendMessage('credentials', {})
+      if (result) {
+        const { profile } = result
+        this.profile = profile
+      }
+    },
+    async updateMedia () {
+      const { url: urlStr, tabMedia } = await this.sendMessage('tab-info', {})
+      const url = new URL(urlStr)
+      this.location = {
+        href: urlStr,
+        host: url.host,
+        hostname: url.hostname,
+        origin: url.origin,
+        search: url.search
+      }
+      this.media = tabMedia || {}
     }
   },
   beforeMount () {
-    const browser = window.browser || window.chrome
-    const name = 'tab-media:modal'
-    const port = browser.runtime.connect({ name })
-    this.port = port
     const uri = new URI(window.location.href)
     const query = uri.query(true)
     this.isOnTwoSeven = query.isOnTwoSeven === 'true'
   },
   async mounted () {
     window.app = this
-    if (window.top === window) {
-      // Testing
-      this.$el.classList.add('container')
-    }
-    window.addEventListener('message', async (evt) => {
-      if (!evt.data || !evt.data.__evt_name) {
-        return
-      }
-      let media
-      let location
-      switch (evt.data.__evt_name) {
-        case 'modal-open': {
-          await this.updateProfile()
-          break
-        }
-        case 'media-update':
-          media = evt.data.media || {}
-          location = evt.data.location || {}
-          this.location = location
-          this.media = media
-          break
-        case 'modal-hide':
-          window.app.$children.forEach((child) => {
-            if (child.plyr) {
-              child.plyr.pause()
-            }
-          })
-          break
-        default:
-          throw new Error(`Unimplemented event '${evt.data.__evt_name}'`)
-      }
-    })
 
-    const { port } = this
     await this.updateProfile()
 
     // Handle media updates
-    port.onMessage.addListener(function (msg) {
-      const { action, data = {} } = msg
-      if (action !== 'media-update') {
-        return
-      }
-      const { media = {}, location = {} } = data
-      this.location = location
-      this.media = media
-    }.bind(this))
-
-    port.postMessage({
-      action: 'media-update',
-      to: 'tab-media-bg',
-      from: name
-    })
+    await this.updateMedia()
 
     window.addEventListener('resize', this.onResize)
     this.onResize()

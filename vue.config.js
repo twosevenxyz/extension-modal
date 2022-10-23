@@ -10,7 +10,7 @@ module.exports = {
     Object.assign(config.resolve.alias, {
       vue$: 'vue/dist/vue.runtime.js',
       '@': resolve('src'),
-      plyr: path.join(resolve('plyr'), 'dist', 'plyr.js')
+      plyr: '@twosevenxyz/plyr/dist/plyr.js'
     })
   },
   css: {

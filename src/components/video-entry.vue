@@ -15,16 +15,16 @@
             </a>
             <div v-else>
               <div class="watch-option" v-if="entry.entryType === 'media'">
-                <a class="queue button is-outlined is-primary primary" @click="triggerWatch()">
+                <button class="queue button is-outlined is-primary primary" @click="triggerWatch()">
                   <play-circle :size="iconSize" class="watch-icon" title="Watch Now"/>
                   <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Watch Now' }}</span>
-                </a>
+                </button>
               </div>
               <div class="watch-option" v-show="hasPlaylistPrivilege">
-                <a class="queue button is-outlined is-primary primary" @click="triggerWatch(true)">
+                <button class="queue button is-outlined is-primary primary" @click="triggerWatch(true)">
                   <PlusBoxMultiple :size="iconSize" class="watch-icon" title="Add to Queue"/>
                   <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Add to Queue' }}</span>
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -135,8 +135,16 @@ export default {
       type: Object
     },
     plyrIconUrl: {
-      type: String,
-      default: '/node_modules/@twosevenxyz/plyr/dist/plyr.svg'
+      type: String
+    },
+    getUrl: {
+      type: Function
+    },
+    onMessage: {
+      type: Function
+    },
+    sendMessage: {
+      type: Function
     }
   },
   components: {
@@ -309,22 +317,22 @@ export default {
       }
     },
     triggerWatch (onlyQueue = false) {
-      this.triggerEvent('trigger-watch', { mediaEntry: this.entry, onlyQueue })
-      this.triggerEvent('modal-hide', {}, window.parent)
+      this.sendMessage('twoseven:triggerWatch', { mediaEntry: this.entry, onlyQueue })
+      window.top.postMessage({ action: 'twoseven:modal:hide' }, '*')
     }
   },
   mounted () {
-    const self = this
     const defaultControls = ['play', 'progress', 'volume', 'captions', 'settings']
     const { plyrProvider, tracks = [] } = this.entry.videoData
+    debugger // eslint-disable-line no-debugger
     this.plyr = new Plyr(this.$refs.plyrEl, {
       iconUrl: this.plyrIconUrl,
       urls: {
         youtube: {
-          sdk: '/web_resources/js/youtube/iframe_api.js'
+          sdk: this.getUrl('/web_resources/youtube/iframe_api.js')
         },
         vimeo: {
-          sdk: '/web_resources/js/vimeo/player.js'
+          sdk: this.getUrl('/web_resources/vimeo/player.js')
         }
       },
       controls: plyrProvider ? defaultControls : [],
@@ -377,15 +385,15 @@ export default {
     }
 
     this.plyr.on('loadedmetadata', () => {
-      const duration = self.plyr.duration
+      const duration = this.plyr.duration
       const durationStr = moment().startOf('day').seconds(duration).format('HH:mm:ss')
-      self.duration = durationStr
+      this.duration = durationStr
     })
 
     if (this.entry.videoSelector === 'web') {
       const url = this.entry.videoURL
       const realUrl = this.url
-      const { entry: { headers } } = self
+      const { entry: { headers } } = this
       headers.push({
         name: 'x-from-tab-modal',
         value: '1'
@@ -394,11 +402,10 @@ export default {
         // This is a HLS video
         const config = {
           loader: XhrHelpLoader,
-          async xhrSetup (xhr, realUrl) {
-            await self.triggerEvent('xhr-help', {
-              url: realUrl,
-              headers: self.entry.headers
-            }, undefined, true)
+          xhrSetup: async (xhr, realUrl) => {
+            for (const entry of headers) {
+              xhr.setRequestHeader(entry.name, entry.value)
+            }
           },
           enableWorker: false
         }
@@ -411,7 +418,7 @@ export default {
         this.plyr.on('languagechange', () => {
           // Caption support is still flaky. See: https://github.com/sampotts/plyr/issues/994
           setTimeout(() => {
-            hls.subtitleTrack = self.plyr.currentTrack
+            hls.subtitleTrack = this.plyr.currentTrack
           }, 50)
         })
       } else if (url.startsWith('mpd:')) {
@@ -428,7 +435,7 @@ export default {
 </script>
 
 <style lang="scss">
-@import '~@/../plyr/src/sass/plyr.scss';
+@import '~@twosevenxyz/plyr/dist/plyr.css';
 @import '~bulma-tooltip';
 
 .small {
