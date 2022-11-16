@@ -101,6 +101,7 @@ export default {
     },
     async show (v) {
       if (v) {
+        // debugger // eslint-disable-line no-debugger
         await Promise.all([
           this.updateProfile(),
           this.updateMedia()

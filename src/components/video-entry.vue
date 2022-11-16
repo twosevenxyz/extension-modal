@@ -324,7 +324,6 @@ export default {
   mounted () {
     const defaultControls = ['play', 'progress', 'volume', 'captions', 'settings']
     const { plyrProvider, tracks = [] } = this.entry.videoData
-    debugger // eslint-disable-line no-debugger
     this.plyr = new Plyr(this.$refs.plyrEl, {
       iconUrl: this.plyrIconUrl,
       urls: {
