@@ -27,7 +27,6 @@
     "shaka-player": "^2.5.18",
     "typeface-roboto": "0.0.75",
     "urijs": "^1.19.4",
-    "vue": "^2.6.12",
     "vue-material-design-icons": "^4.11.0"
   },
   "devDependencies": {
@@ -49,8 +48,9 @@
     "eslint-plugin-vue": "^6.2.2",
     "sass": "^1.30.0",
     "sass-loader": "^8.0.2",
+    "vue": "^2.7.14",
     "vue-cli-plugin-storybook": "^2.0.0",
-    "vue-template-compiler": "^2.6.12"
+    "vue-template-compiler": "^2.7.0"
   },
   "_id": "modal@0.1.0",
   "readme": "ERROR: No README data found!"
