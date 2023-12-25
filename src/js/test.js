@@ -8,7 +8,15 @@ const hlsData = {
   mediaType: 'hls',
   videoURL: 'hls:https://bitmovin-a.akamaihd.net/content/MI201109210084_1/m3u8s/f08e80da-bf1d-4e3d-8899-f0f6155f6efa_video_180_250000.m3u8',
   videoData: {
-    module: 'generic',
+    module: {
+      name: 'generic',
+      config: {
+        strategies: [
+          'url',
+          'iframe'
+        ]
+      }
+    },
     referer: 'https://bitmovin.com/demos/stream-test?format=hls&manifest=https%3A%2F%2Fbitmovin-a.akamaihd.net%2Fcontent%2FMI201109210084_1%2Fm3u8s%2Ff08e80da-bf1d-4e3d-8899-f0f6155f6efa.m3u8',
     plyrProvider: 'html5',
     mediaType: 'hls',
@@ -18,10 +26,6 @@ const hlsData = {
   },
   origin: 'https://bitmovin.com',
   from: 'common-media-finder',
-  strategies: [
-    'url',
-    'iframe'
-  ],
   tabId: 2152,
   headers: []
 }
@@ -63,7 +67,6 @@ const netflixData = {
   },
   referer: 'https://www.netflix.com/watch/80018294',
   origin: 'https://www.netflix.com/watch/80018294',
-  strategies: null,
   headers: [
     {
       name: 'x-twoseven-ext-tab-media',
