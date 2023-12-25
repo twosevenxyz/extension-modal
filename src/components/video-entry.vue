@@ -214,16 +214,16 @@ onMounted(async () => {
             </a>
             <div v-else>
               <div class="watch-option" v-if="entry.entryType === 'media'">
-                <a class="queue button is-outlined is-primary primary" @click="triggerWatch()">
+                <button class="queue button is-outlined is-primary primary" @click="triggerWatch()">
                   <play-circle :size="iconSize" class="watch-icon" title="Watch Now"/>
                   <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Watch Now' }}</span>
-                </a>
+                </button>
               </div>
               <div class="watch-option" v-show="hasPlaylistPrivilege">
-                <a class="queue button is-outlined is-primary primary" @click="triggerWatch(true)">
+                <button class="queue button is-outlined is-primary primary" @click="triggerWatch(true)">
                   <PlusBoxMultiple :size="iconSize" class="watch-icon" title="Add to Queue"/>
                   <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Add to Queue' }}</span>
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -288,10 +288,10 @@ export default defineComponent({
       iconUrl: this.plyrIconUrl,
       urls: {
         youtube: {
-          sdk: '/web_resources/js/youtube/iframe_api.js'
+          sdk: this.getUrl('/web_resources/youtube/iframe_api.js')
         },
         vimeo: {
-          sdk: '/web_resources/js/vimeo/player.js'
+          sdk: this.getUrl('/web_resources/vimeo/player.js')
         }
       },
       controls: plyrProvider ? defaultControls : [],
