@@ -1,7 +1,10 @@
 import Hls from 'hls.js'
 
-class XhrHelpLoader extends Hls.DefaultConfig.loader { // eslint-disable-line no-unused-vars
-  async loadInternal () {
+class XhrHelpLoader extends Hls.DefaultConfig.loader {
+  private loader: XMLHttpRequest | null = null
+  private requestTimeout: number | undefined
+
+  async loadInternal (): Promise<void> {
     const context = this.context
     const xhr = this.loader = new XMLHttpRequest()
 
@@ -31,12 +34,12 @@ class XhrHelpLoader extends Hls.DefaultConfig.loader { // eslint-disable-line no
     }
 
     if (context.rangeEnd) {
-      xhr.setRequestHeader('Range', 'bytes=' + context.rangeStart + '-' + (context.rangeEnd - 1))
+      xhr.setRequestHeader('Range', `bytes=${context.rangeStart}-${context.rangeEnd - 1}`)
     }
 
     xhr.onreadystatechange = this.readystatechange.bind(this)
     xhr.onprogress = this.loadprogress.bind(this)
-    xhr.responseType = context.responseType
+    xhr.responseType = context.responseType as XMLHttpRequestResponseType
 
     // setup timeout before we perform request
     this.requestTimeout = window.setTimeout(this.loadtimeout.bind(this), this.config.timeout)

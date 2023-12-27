@@ -1,3 +1,6 @@
+<script setup lang="ts">
+</script>
+
 <template>
   <div class="patreon-container">
     <a href="https://www.patreon.com/bePatron?u=17171070" target="_blank" data-patreon-widget-type="become-patron-button">
@@ -5,14 +8,6 @@
     </a>
   </div>
 </template>
-
-<script>
-export default {
-  name: 'patreon',
-  mounted () {
-  }
-}
-</script>
 
 <style lang="scss" scoped>
 .patreon-container {

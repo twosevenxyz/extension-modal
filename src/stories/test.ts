@@ -79,7 +79,7 @@ const netflixData = {
   tabId: 1255
 }
 
-export function randomMediaEntry (type = 'mp4') {
+export function randomMediaEntry (type = 'mp4', reason?: string, until?: number, tier?: number) {
   let ret = null
   switch (type) {
     case 'mp4':
@@ -95,34 +95,37 @@ export function randomMediaEntry (type = 'mp4') {
   ret = JSON.parse(JSON.stringify(ret))
   ret.videoURL += `?q=${(Math.random() * 1e6 | 0)}`
   ret.videoData.hash = `${Math.random() * 1e12 | 0}`
-  if (Math.random() > 0.5) {
-    let reason
-    let until
-    if (Math.random() > 0.5) {
-      reason = 'early-access'
+  if (reason || Math.random() > 0.5) {
+    if (!reason) {
+      if (Math.random() > 0.5) {
+        reason = 'early-access'
+      } else {
+        reason = 'patron-only'
+      }
+    }
+    if (reason === 'early-access' && !until) {
       until = Math.random() > 0.5 ? Date.now() + 50000 : Date.now() - 50000
-    } else {
-      reason = 'patron-only'
     }
     ret.videoData.isLocked = {
       reason,
-      until
+      until,
+      tier
     }
   }
   return ret
 }
 
 export function randomMedia (numMedia = (3 + (Math.random() * 5) | 0)) {
-  const ret = {}
+  const ret: Record<string, any> = {}
   for (let idx = 0; idx < numMedia; idx++) {
     const type = Math.random() > 0.5 ? 'hls' : 'mp4'
     const media = randomMediaEntry(type)
-    ret[idx] = media
+    ret[`${idx}`] = media
   }
   return ret
 }
 
 export function fakeInitialize () {
   const media = randomMedia(10)
-  window.app.media = media
+  ;(window as any).app.media.value = media
 }
