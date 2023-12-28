@@ -54,18 +54,12 @@ const validMedia = computed(() => {
 })
 
 watch(() => props.show, async (v) => {
-  debugger
   if (v) {
     await Promise.all([
       updateProfile(),
       updateMedia()
     ])
   }
-})
-
-watch(() => props.media, () => {
-  debugger
-  console.log(`props.media changed`)
 })
 
 const onResize = () => {
