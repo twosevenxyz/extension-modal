@@ -21,6 +21,7 @@ export interface PartialVideoData {
   tracks?: { format: string, src: string, text?: string }[]
   plyrContentType: string
   poster?: string
+  duration?: number
 }
 
 export interface Entry {

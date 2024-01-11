@@ -45,7 +45,7 @@ const props = defineProps<{
 
 const plyrEl = ref<HTMLElement>(null as any)
 let plyr: Plyr | undefined
-const duration = ref<number|string>(0)
+const duration = ref<number>(props.entry.videoData.duration ?? 0)
 
 const url = computed(() => {
   if (props.entry.videoURL.indexOf('http') > 0) {
@@ -56,6 +56,11 @@ const url = computed(() => {
 
 const premiumContent = computed(() => {
   return !!props.entry.videoData.premiumContent
+})
+
+const durationStr = computed(() => {
+  const durationStr = moment().startOf('day').seconds(duration.value).format('HH:mm:ss')
+  return durationStr
 })
 
 const filename = computed(() => {
@@ -264,8 +269,9 @@ onMounted(async () => {
 
   plyr.on('loadedmetadata', () => {
     const videoDuration = plyr!.duration
-    const durationStr = moment().startOf('day').seconds(videoDuration).format('HH:mm:ss')
-    duration.value = durationStr
+    if (videoDuration !== 0) {
+      duration.value = videoDuration
+    }
   })
 
   if (props.entry.videoSelector === 'web') {
@@ -280,7 +286,7 @@ onMounted(async () => {
       // This is a HLS video
       const config: Partial<HlsConfig> = {
         loader: XhrHelpLoader,
-        xhrSetup: async (xhr, realUrl) => {
+        xhrSetup: async (xhr: any, realUrl: any) => {
           for (const entry of headers) {
             xhr.setRequestHeader(entry.name, entry.value)
           }
@@ -384,7 +390,7 @@ onBeforeUnmount(() => {
                 <span class="has-text-warning">{{ warnText }}</span>
               </li>
               <li class="video-info-li">
-                <span class="right video-duration"> Duration: {{ duration }} </span>
+                <span class="right video-duration"> Duration: {{ durationStr }} </span>
               </li>
             </ul>
           </div>
