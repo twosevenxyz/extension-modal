@@ -14,7 +14,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@gurupras/subsrt": "^2.0.1",
+    "@gurupras/subsrt": "^2.0.2",
     "@linusborg/vue-ko-fi-button": "^0.1.0",
     "@twosevenxyz/plyr": "^3.6.12-6",
     "bulma": "^0.9.4",
