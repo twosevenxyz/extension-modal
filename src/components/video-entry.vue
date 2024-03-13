@@ -7,7 +7,7 @@ import URI from 'urijs'
 // @ts-ignore
 import Shaka from 'shaka-player'
 import moment from 'moment'
-import XhrHelpLoader from '../utils/xhr-helper'
+import XhrHelpLoader, { ExtensionBGLoader } from '../utils/xhr-helper'
 // @ts-ignore
 import subsrt from '@gurupras/subsrt'
 import Patreon from './v-patreon.vue'
@@ -48,10 +48,14 @@ let plyr: Plyr | undefined
 const duration = ref<number>(props.entry.videoData.duration ?? 0)
 
 const url = computed(() => {
-  if (props.entry.videoURL.indexOf('http') > 0) {
+  if (!props.entry.videoURL.startsWith('http')) {
     return props.entry.videoURL.substr(4)
   }
   return props.entry.videoURL
+})
+
+const mediaType = computed(() => {
+  return props.entry.videoData.mediaType
 })
 
 const premiumContent = computed(() => {
@@ -203,6 +207,10 @@ const triggerWatch = (onlyQueue = false) => {
   window.top?.postMessage({ action: 'twoseven:modal:hide' }, '*')
 }
 
+defineExpose({
+  getPlyr: () => plyr
+})
+
 onMounted(async () => {
   const defaultControls = ['play', 'progress', 'volume', 'captions', 'settings']
   const { plyrProvider, tracks = [] } = props.entry.videoData
@@ -255,6 +263,31 @@ onMounted(async () => {
     })
   })
 
+  if (props.entry.videoSelector === 'web' && props.entry.videoData.mediaType === 'html5') {
+    // Ask BG to add any headers that we may have
+    const dnrRequestHeaders = props.entry.headers.map(header => ({
+      header: header.name,
+      operation: 'set',
+      value: header.value
+    }))
+    const dnrResponseHeaders = props.entry.headers.map(header => ({
+      header: 'access-control-allow-origin',
+      operation: 'set',
+      value: location.origin
+    }))
+    const ruleIDs = await props.sendMessage('twoseven:dynamic-dnr', [{
+      action: {
+        type: 'modifyHeaders',
+        requestHeaders: dnrRequestHeaders,
+        responseHeaders: dnrResponseHeaders
+      },
+      condition: {
+        urlFilter: url.value,
+        initiatorDomains: [location.host]
+      }
+    }])
+    // TODO: Look into whether we should clear out the ruleIDs
+  }
   plyr.source = {
     type: 'video',
     sources: [
@@ -276,25 +309,33 @@ onMounted(async () => {
 
   if (props.entry.videoSelector === 'web') {
     const videoURL = props.entry.videoURL
-    const realUrl = url.value
+    const realURL = url.value
     const headers = [...props.entry.headers]
-    headers.push({
-      name: 'x-from-tab-modal',
-      value: '1'
-    })
-    if (videoURL.startsWith('hls:')) {
+
+    if (props.entry.videoData.mediaType === 'hls') {
       // This is a HLS video
       const config: Partial<HlsConfig> = {
-        loader: XhrHelpLoader,
-        xhrSetup: async (xhr: any, realUrl: any) => {
-          for (const entry of headers) {
-            xhr.setRequestHeader(entry.name, entry.value)
-          }
+        loader: function (config: any) {
+          return new ExtensionBGLoader(config, headers, async (url, headers, responseType) => {
+            const result = await props.sendMessage('network-request', {
+                fetchArgs: [
+                  url,
+                  { headers }
+                ],
+                responseType,
+                getRefererFromTabURL: false
+              })
+            // The Loader expects result.ok to be a boolean
+            if (result.status < 400) {
+              result.ok = true
+            }
+            return result
+          })
         },
         enableWorker: false
       }
       const hls = new Hls(config)
-      hls.loadSource(realUrl)
+      hls.loadSource(realURL)
       hls.attachMedia((plyr as any).media)
       ;(plyr as any).hls = hls
 
@@ -305,10 +346,10 @@ onMounted(async () => {
           hls.subtitleTrack = plyr!.currentTrack
         }, 50)
       })
-    } else if (videoURL.startsWith('mpd:')) {
+    } else if (props.entry.videoData.mediaType === 'mpd') {
       Shaka.polyfill.installAll()
       const shaka = new Shaka.Player((plyr as any).media)
-      shaka.load(realUrl)
+      shaka.load(realURL)
     }
   }
 })

@@ -6,6 +6,8 @@ export interface Header {
 }
 export type Headers = Header[]
 
+export type MediaType = 'html5' | 'hls' | 'mpd'
+
 export interface PartialVideoData {
   hash: string
   title: string
@@ -22,6 +24,7 @@ export interface PartialVideoData {
   plyrContentType: string
   poster?: string
   duration?: number
+  mediaType?: MediaType | null
 }
 
 export interface Entry {

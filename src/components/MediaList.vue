@@ -27,6 +27,7 @@ const $emit = defineEmits<{
 const hiddenEntries = ref<Record<string, boolean>>({})
 const isOnTwoSeven = ref<boolean>(false)
 const width = ref<string|number>(0)
+const videoEntries = ref<typeof VideoEntry[]>([])
 
 const filteredMedia = computed(() => {
   const ret: Record<string, Entry> = {}
@@ -89,7 +90,8 @@ defineExpose({
   isOnTwoSeven,
   profile: () => props.profile,
   updateProfile,
-  updateMedia
+  updateMedia,
+  videoEntries
 })
 
 onBeforeMount(() => {
@@ -136,7 +138,8 @@ onMounted(async () => {
               :is-locked="entry.videoData.isLocked"
               :location="location"
               :is-on-two-seven="isOnTwoSeven"
-              @hide-entry="hideEntry(entry.videoData.hash)"/>
+              @hide-entry="hideEntry(entry.videoData.hash)"
+              ref="videoEntries"/>
         </li>
       </ul>
     </div>
