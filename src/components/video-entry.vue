@@ -359,7 +359,6 @@ onMounted(async () => {
       }, 50)
     })
   } else if (props.entry.videoData.mediaType === 'mpd') {
-    Shaka.polyfill.installAll()
     const shaka = new Shaka.Player()
     const networkingEngine = shaka.getNetworkingEngine()
     const requestMap = new Map()
