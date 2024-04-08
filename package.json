@@ -20,7 +20,7 @@
     "bulma": "^0.9.4",
     "bulma-tooltip": "^3.0.2",
     "emittery": "^1.0.1",
-    "hls.js": "^0.13.2",
+    "hls.js": "^1.5.7",
     "is_js": "^0.9.0",
     "moment": "^2.29.1",
     "shaka-player": "^4.7.1",

@@ -25,6 +25,7 @@ export interface PartialVideoData {
   poster?: string
   duration?: number
   mediaType?: MediaType | null
+  topURL: string
 }
 
 export interface Entry {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Hls, { HlsConfig } from 'hls.js'
+import HLS from 'hls.js'
 // @ts-ignore
 import Plyr from '@twosevenxyz/plyr'
 // @ts-ignore
@@ -7,7 +7,7 @@ import URI from 'urijs'
 // @ts-ignore
 import Shaka from 'shaka-player'
 import moment from 'moment'
-import XhrHelpLoader, { ExtensionBGLoader } from '../utils/xhr-helper'
+import { XHRHelperRequestModifierLoader } from '../utils/xhr-helper-request-modifier'
 // @ts-ignore
 import subsrt from '@gurupras/subsrt'
 import Patreon from './v-patreon.vue'
@@ -15,7 +15,7 @@ import Patreon from './v-patreon.vue'
 import KoFiButton from '@linusborg/vue-ko-fi-button'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { isTouch, isDesktop } from '../utils/bulma-vars'
-import { Entry, Profile } from './types'
+import { Entry, Header, Headers, Profile } from './types'
 const oldVTT = subsrt.format.vtt
 subsrt.format.vtt = {
   name: 'vtt',
@@ -211,6 +211,43 @@ defineExpose({
   getPlyr: () => plyr
 })
 
+const requestExtensionHelpForNetworkRequest = async (url: string, headers: Headers, topURL: string) => {
+  if (headers.length === 0) {
+    return async () => {}
+  }
+
+  const dnrRequestHeaders: any = headers.map((header: Header) => ({
+    header: header.name,
+    operation: 'set',
+    value: header.value
+  }))
+
+  const dnrResponseHeaders = [{
+    header: 'access-control-allow-origin',
+    operation: 'set',
+    value: location.origin
+  }]
+
+  const requestObj: any = {
+    action: {
+      type: 'modifyHeaders',
+      responseHeaders: dnrResponseHeaders
+    },
+    condition: {
+      urlFilter: url
+    }
+  }
+
+  if (dnrRequestHeaders.length > 0) {
+    requestObj.action!.requestHeaders = dnrRequestHeaders
+  }
+
+  const ruleIDs = await props.sendMessage('twoseven:dynamic-dnr', [requestObj])
+  return async () => {
+    await props.sendMessage('twoseven:dynamic-dnr:remove', ruleIDs)
+  }
+}
+
 onMounted(async () => {
   const defaultControls = ['play', 'progress', 'volume', 'captions', 'settings']
   const { plyrProvider, tracks = [] } = props.entry.videoData
@@ -263,94 +300,87 @@ onMounted(async () => {
     })
   })
 
-  if (props.entry.videoSelector === 'web' && props.entry.videoData.mediaType === 'html5') {
-    // Ask BG to add any headers that we may have
-    const dnrRequestHeaders = props.entry.headers.map(header => ({
-      header: header.name,
-      operation: 'set',
-      value: header.value
-    }))
-    const dnrResponseHeaders = props.entry.headers.map(header => ({
-      header: 'access-control-allow-origin',
-      operation: 'set',
-      value: location.origin
-    }))
-    const ruleIDs = await props.sendMessage('twoseven:dynamic-dnr', [{
-      action: {
-        type: 'modifyHeaders',
-        requestHeaders: dnrRequestHeaders,
-        responseHeaders: dnrResponseHeaders
-      },
-      condition: {
-        urlFilter: url.value,
-        initiatorDomains: [location.host]
+  const load = async (plyr: Plyr, callback?: () => void|Promise<void>) => {
+    plyr.source = {
+      type: 'video',
+      sources: [
+        {
+          src: url.value,
+          type: props.entry.videoData.plyrContentType,
+          provider: props.entry.videoData.plyrProvider
+        }
+      ],
+      poster: props.entry.videoData.poster
+    }
+
+    plyr.on('loadedmetadata', () => {
+      const videoDuration = plyr!.duration
+      if (videoDuration !== 0) {
+        duration.value = videoDuration
       }
-    }])
-    // TODO: Look into whether we should clear out the ruleIDs
-  }
-  plyr.source = {
-    type: 'video',
-    sources: [
-      {
-        src: url.value,
-        type: props.entry.videoData.plyrContentType,
-        provider: props.entry.videoData.plyrProvider
-      }
-    ],
-    poster: props.entry.videoData.poster
+    })
+
+    plyr.on('loadeddata', () => {
+      props.sendMessage('twoseven')
+    })
   }
 
-  plyr.on('loadedmetadata', () => {
-    const videoDuration = plyr!.duration
-    if (videoDuration !== 0) {
-      duration.value = videoDuration
-    }
-  })
+  if (props.entry.videoSelector !== 'web') {
+    load(plyr)
+    return
+  }
 
-  if (props.entry.videoSelector === 'web') {
-    const videoURL = props.entry.videoURL
-    const realURL = url.value
-    const headers = [...props.entry.headers]
+  const videoURL = props.entry.videoURL
+  const realURL = url.value
+  const headers = [...props.entry.headers]
 
-    if (props.entry.videoData.mediaType === 'hls') {
-      // This is a HLS video
-      const config: Partial<HlsConfig> = {
-        loader: function (config: any) {
-          return new ExtensionBGLoader(config, headers, async (url, headers, responseType) => {
-            const result = await props.sendMessage('network-request', {
-                fetchArgs: [
-                  url,
-                  { headers }
-                ],
-                responseType,
-                getRefererFromTabURL: false
-              })
-            // The Loader expects result.ok to be a boolean
-            if (result.status < 400) {
-              result.ok = true
-            }
-            return result
-          })
-        },
-        enableWorker: false
+  if (props.entry.videoData.mediaType === 'html5') {
+    await requestExtensionHelpForNetworkRequest(url.value, props.entry.headers, props.entry.videoData.topURL)
+  }
+  load(plyr)
+
+  if (props.entry.videoData.mediaType === 'hls') {
+    // This is a HLS video
+    const hls = new HLS({
+      loader: XHRHelperRequestModifierLoader,
+      xhrSetup: async (xhr, realUrl) => {
+        return requestExtensionHelpForNetworkRequest(realUrl, headers, props.entry.videoData.topURL)
       }
-      const hls = new Hls(config)
-      hls.loadSource(realURL)
-      hls.attachMedia((plyr as any).media)
-      ;(plyr as any).hls = hls
+    })
+    hls.loadSource(realURL)
+    hls.attachMedia((plyr as any).media)
+    ;(plyr as any).hls = hls
 
-      // Handle changing captions
-      plyr.on('languagechange', () => {
-        // Caption support is still flaky. See: https://github.com/sampotts/plyr/issues/994
-        setTimeout(() => {
-          hls.subtitleTrack = plyr!.currentTrack
-        }, 50)
-      })
-    } else if (props.entry.videoData.mediaType === 'mpd') {
-      Shaka.polyfill.installAll()
-      const shaka = new Shaka.Player((plyr as any).media)
-      shaka.load(realURL)
-    }
+    // Handle changing captions
+    plyr.on('languagechange', () => {
+      // Caption support is still flaky. See: https://github.com/sampotts/plyr/issues/994
+      setTimeout(() => {
+        hls.subtitleTrack = plyr!.currentTrack
+      }, 50)
+    })
+  } else if (props.entry.videoData.mediaType === 'mpd') {
+    Shaka.polyfill.installAll()
+    const shaka = new Shaka.Player()
+    const networkingEngine = shaka.getNetworkingEngine()
+    const requestMap = new Map()
+    networkingEngine.registerRequestFilter(async (type: any, request: any) => {
+      const { uris } = request
+      return Promise.all(uris.map(async (uri: string) => {
+        const cleanup = await requestExtensionHelpForNetworkRequest(uri, headers, props.entry.videoData.topURL)
+        requestMap.set(uri, cleanup)
+        return null
+      }))
+    })
+    networkingEngine.registerResponseFilter((type: any, response: any) => {
+      const { uri } = response
+      const cleanup = requestMap.get(uri)
+      if (cleanup) {
+        cleanup()
+      }
+      requestMap.delete(uri)
+    })
+    shaka.attach((plyr as any).media)
+    shaka.load(realURL)
   }
 })
 
