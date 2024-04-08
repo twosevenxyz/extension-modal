@@ -406,7 +406,7 @@ onBeforeUnmount(() => {
             </span>
             <div v-else>
               <div class="watch-option" v-if="entry.entryType === 'media'">
-                <button class="queue button is-outlined is-primary primary" @click="triggerWatch()">
+                <button class="watch button is-outlined is-primary primary" @click="triggerWatch()">
                   <i-mdi-play-circle :size="iconSize" class="watch-icon" title="Watch Now"/>
                   <span class="watch-text"> {{ isOnTwoSeven ? 'Watch Together' : 'Watch Now' }}</span>
                 </button>
