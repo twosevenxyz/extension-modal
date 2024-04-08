@@ -478,7 +478,7 @@ onBeforeUnmount(() => {
 
 .small {
   .card-image {
-    width: 200px !important;
+    width: 264px !important;
   }
   .watch {
     line-height: 28px;
