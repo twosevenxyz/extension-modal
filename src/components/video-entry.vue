@@ -49,7 +49,8 @@ const duration = ref<number>(props.entry.videoData.duration ?? 0)
 
 const url = computed(() => {
   if (!props.entry.videoURL.startsWith('http')) {
-    return props.entry.videoURL.substr(4)
+    const firstColonIndex = props.entry.videoURL.indexOf(':')
+    return props.entry.videoURL.slice(firstColonIndex + 1)
   }
   return props.entry.videoURL
 })
@@ -334,12 +335,12 @@ onMounted(async () => {
   const realURL = url.value
   const headers = [...props.entry.headers]
 
-  if (props.entry.videoData.mediaType === 'html5') {
+  if (mediaType.value === 'html5') {
     await requestExtensionHelpForNetworkRequest(url.value, props.entry.headers, props.entry.videoData.topURL)
   }
   load(plyr)
 
-  if (props.entry.videoData.mediaType === 'hls') {
+  if (mediaType.value === 'hls') {
     // This is a HLS video
     const hls = new HLS({
       loader: XHRHelperRequestModifierLoader,
@@ -358,7 +359,7 @@ onMounted(async () => {
         hls.subtitleTrack = plyr!.currentTrack
       }, 50)
     })
-  } else if (props.entry.videoData.mediaType === 'mpd') {
+  } else if (mediaType.value === 'dash') {
     const shaka = new Shaka.Player()
     const networkingEngine = shaka.getNetworkingEngine()
     const requestMap = new Map()

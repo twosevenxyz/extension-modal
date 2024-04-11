@@ -6,7 +6,7 @@ export interface Header {
 }
 export type Headers = Header[]
 
-export type MediaType = 'html5' | 'hls' | 'mpd'
+export type MediaType = 'html5' | 'hls' | 'dash'
 
 export interface PartialVideoData {
   hash: string
