@@ -1,55 +1,54 @@
-import Hls from 'hls.js';
+import Hls from 'hls.js'
 
 export class XHRHelperRequestModifierLoader extends Hls.DefaultConfig.loader {
-  async loadInternal() {
-    const context = this.context;
-    const xhr = (this.loader = new XMLHttpRequest());
+  async loadInternal () {
+    const context = this.context
+    const xhr = (this.loader = new XMLHttpRequest())
 
-    const stats = this.stats;
-    stats.tfirst = 0;
-    stats.loaded = 0;
-    const xhrSetup = this.xhrSetup;
+    const stats = this.stats
+    stats.tfirst = 0
+    stats.loaded = 0
+    const xhrSetup = this.xhrSetup
 
-    let cleanup;
+    let cleanup
     try {
       if (xhrSetup) {
         try {
-          cleanup = await xhrSetup(xhr, context.url);
+          cleanup = await xhrSetup(xhr, context.url)
         } catch (e) {
           // fix xhrSetup: (xhr, url) => {xhr.setRequestHeader("Content-Language", "test");}
           // not working, as xhr.setRequestHeader expects xhr.readyState === OPEN
-          xhr.open('GET', context.url, true);
-          xhrSetup(xhr, context.url);
+          xhr.open('GET', context.url, true)
+          xhrSetup(xhr, context.url)
         }
       }
       if (!xhr.readyState) {
-        xhr.open('GET', context.url, true);
+        xhr.open('GET', context.url, true)
       }
     } catch (e) {
       // IE11 throws an exception on xhr.open if attempting to access an HTTP resource over HTTPS
-      this.callbacks.onError({ code: xhr.status, text: e.message }, context, xhr);
-      return;
+      this.callbacks.onError({ code: xhr.status, text: e.message }, context, xhr)
+      return
     }
 
     if (context.rangeEnd) {
-      xhr.setRequestHeader('Range', 'bytes=' + context.rangeStart + '-' + (context.rangeEnd - 1));
+      xhr.setRequestHeader('Range', 'bytes=' + context.rangeStart + '-' + (context.rangeEnd - 1))
     }
 
-    xhr.onreadystatechange = this.readystatechange.bind(this);
-    xhr.onprogress = this.loadprogress.bind(this);
-    xhr.responseType = context.responseType;
+    xhr.onreadystatechange = this.readystatechange.bind(this)
+    xhr.onprogress = this.loadprogress.bind(this)
+    xhr.responseType = context.responseType
 
     xhr.addEventListener('readystatechange', async () => {
       if (xhr.readyState === XMLHttpRequest.DONE) {
         if (cleanup) {
-          cleanup();
+          cleanup()
         }
       }
-    });
+    })
 
     // setup timeout before we perform request
-    this.requestTimeout = window.setTimeout(this.loadtimeout.bind(this), this.config.timeout);
-    xhr.send();
+    this.requestTimeout = window.setTimeout(this.loadtimeout.bind(this), this.config.timeout)
+    xhr.send()
   }
 }
-

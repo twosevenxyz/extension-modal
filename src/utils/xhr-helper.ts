@@ -1,5 +1,5 @@
 import HLS, { LoadStats } from 'hls.js'
-import { Headers } from "@/components/types"
+import { Headers } from '@/components/types'
 
 type MakeRequest = (url: string, headers: Record<string, string>, responseType: string) => Promise<void>
 
@@ -7,7 +7,7 @@ export class ExtensionBGLoader extends HLS.DefaultConfig.loader {
   headers: Record<string, string>
   makeRequest: MakeRequest
 
-  constructor(config: any, headers: Headers, makeRequest: MakeRequest) {
+  constructor (config: any, headers: Headers, makeRequest: MakeRequest) {
     super(config)
     this.headers = {}
     if (Array.isArray(headers)) {
@@ -19,13 +19,13 @@ export class ExtensionBGLoader extends HLS.DefaultConfig.loader {
     this.makeRequest = makeRequest
   }
 
-  destroy() {
+  destroy () {
   }
 
-  abort() {
+  abort () {
   }
 
-  async load(context: any, config: any, callbacks: any) {
+  async load (context: any, config: any, callbacks: any) {
     const stats = new LoadStats()
     stats.retry = 0
     stats.loading.start = performance.now()
@@ -41,7 +41,7 @@ export class ExtensionBGLoader extends HLS.DefaultConfig.loader {
     } else {
       callbacks.onError({ text: 'Failed to make request' }, context)
     }
-    let loadResult: any = { url }
+    const loadResult: any = { url }
     let len
     if (context.responseType === 'arraybuffer') {
       const buffer = new Uint8Array(response.buffer).buffer

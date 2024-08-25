@@ -1,10 +1,8 @@
 import { Meta, StoryObj } from '@storybook/vue3'
-import { ref } from 'vue'
 import '../style/main.scss'
 import './fake-bg'
 import { randomMediaEntry } from './test'
 import VideoEntry from '../components/video-entry.vue'
-import { Entry } from '@/components/types'
 
 const meta: Meta<typeof VideoEntry> = {
   title: 'VideoEntry',
