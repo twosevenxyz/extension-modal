@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import HLS from 'hls.js'
+import type { HlsConfig } from 'hls.js'
 // @ts-ignore
 import Plyr from '@twosevenxyz/plyr'
 // @ts-ignore
@@ -331,7 +332,6 @@ onMounted(async () => {
     return
   }
 
-  const videoURL = props.entry.videoURL
   const realURL = url.value
   const headers = [...props.entry.headers]
 
@@ -342,11 +342,11 @@ onMounted(async () => {
 
   if (mediaType.value === 'hls') {
     // This is a HLS video
+    const xhrSetup = async (xhr: XMLHttpRequest, realUrl: string) => {
+      return requestExtensionHelpForNetworkRequest(realUrl, headers, props.entry.videoData.topURL)
+    }
     const hls = new HLS({
-      loader: XHRHelperRequestModifierLoader,
-      xhrSetup: async (xhr, realUrl) => {
-        return requestExtensionHelpForNetworkRequest(realUrl, headers, props.entry.videoData.topURL)
-      }
+      loader: function (config: HlsConfig) { return new XHRHelperRequestModifierLoader(xhrSetup, config) } as any
     })
     hls.loadSource(realURL)
     hls.attachMedia((plyr as any).media)
@@ -474,7 +474,8 @@ onBeforeUnmount(() => {
 <style lang="scss">
 @import '../style/main.scss';
 @import '@twosevenxyz/plyr/dist/plyr.css';
-@import 'bulma-tooltip';
+@import 'bulma-tooltip/dist/css/bulma-tooltip.min.css';
+@import 'bulma/sass/utilities/mixins.scss';
 
 .small {
   .card-image {
@@ -596,18 +597,18 @@ onBeforeUnmount(() => {
       }
     }
     .video-title {
-      .material-design-icon {
-        vertical-align: text-bottom;
-      }
       font-size: 16px;
       text-overflow: ellipsis;
       overflow: hidden;
       flex: 1;
+      max-width: 400px;
+      white-space: nowrap;
       @include until($desktop) {
         max-width: 200px;
       }
-      max-width: 400px;
-      white-space: nowrap;
+      .material-design-icon {
+        vertical-align: text-bottom;
+      }
     }
     .video-duration {
       font-size: 14px;

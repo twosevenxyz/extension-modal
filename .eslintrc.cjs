@@ -4,11 +4,7 @@ module.exports = {
     browser: true,
     es2021: true
   },
-  extends: [
-    'standard',
-    'plugin:vue/vue3-essential',
-    'plugin:storybook/recommended'
-  ],
+  extends: ['standard', 'plugin:vue/vue3-essential', 'plugin:storybook/recommended'],
   overrides: [
     {
       env: {

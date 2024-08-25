@@ -1,16 +1,27 @@
 import Hls from 'hls.js'
+import type { HlsConfig } from 'hls.js'
+
+export type XHRSetup = (xhr: XMLHttpRequest, url: string) => Promise<() => void>
 
 export class XHRHelperRequestModifierLoader extends Hls.DefaultConfig.loader {
+  xhrSetup: XHRSetup
+  config: HlsConfig
+  constructor (xhrSetup: XHRSetup, config: HlsConfig) {
+    super(config)
+    this.xhrSetup = xhrSetup
+    this.config = config
+  }
+
   async loadInternal () {
-    const context = this.context
-    const xhr = (this.loader = new XMLHttpRequest())
+    const context = this.context!
+    const xhr = new XMLHttpRequest()
+    ;(this as any).loader = xhr
 
     const stats = this.stats
-    stats.tfirst = 0
     stats.loaded = 0
-    const xhrSetup = this.xhrSetup
+    const { xhrSetup } = this
 
-    let cleanup
+    let cleanup: () => void
     try {
       if (xhrSetup) {
         try {
@@ -27,7 +38,7 @@ export class XHRHelperRequestModifierLoader extends Hls.DefaultConfig.loader {
       }
     } catch (e) {
       // IE11 throws an exception on xhr.open if attempting to access an HTTP resource over HTTPS
-      this.callbacks.onError({ code: xhr.status, text: e.message }, context, xhr)
+      (this as any).callbacks.onError({ code: xhr.status, text: (e as any).message }, context, xhr)
       return
     }
 
@@ -35,9 +46,9 @@ export class XHRHelperRequestModifierLoader extends Hls.DefaultConfig.loader {
       xhr.setRequestHeader('Range', 'bytes=' + context.rangeStart + '-' + (context.rangeEnd - 1))
     }
 
-    xhr.onreadystatechange = this.readystatechange.bind(this)
-    xhr.onprogress = this.loadprogress.bind(this)
-    xhr.responseType = context.responseType
+    xhr.onreadystatechange = (this as any).readystatechange.bind(this)
+    xhr.onprogress = (this as any).loadprogress.bind(this)
+    xhr.responseType = context.responseType as any
 
     xhr.addEventListener('readystatechange', async () => {
       if (xhr.readyState === XMLHttpRequest.DONE) {
@@ -48,7 +59,7 @@ export class XHRHelperRequestModifierLoader extends Hls.DefaultConfig.loader {
     })
 
     // setup timeout before we perform request
-    this.requestTimeout = window.setTimeout(this.loadtimeout.bind(this), this.config.timeout)
+    ;(this as any).requestTimeout = window.setTimeout((this as any).loadtimeout.bind(this), (this.config as any).timeout)
     xhr.send()
   }
 }
