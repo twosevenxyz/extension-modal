@@ -522,7 +522,16 @@ onBeforeUnmount(() => {
   .column {
     padding: 0;
   }
+
+  .button.is-outlined {
+    --bulma-button-border-width: 1px;
+
+    &:hover {
+      --bulma-button-border-width: 1px;
+    }
+  }
 }
+
 .card-image {
   margin: 1%;
   min-width: 200px !important;
