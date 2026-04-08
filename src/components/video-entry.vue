@@ -317,8 +317,9 @@ onMounted(async () => {
 
     plyr.on('loadedmetadata', () => {
       const videoDuration = plyr!.duration
-      if (videoDuration !== 0) {
+      if (videoDuration !== 0 && !props.entry.videoData.duration) {
         duration.value = videoDuration
+        props.sendMessage('modal:update-media-entry-duration', { hash: props.entry.videoData.hash, duration: videoDuration })
       }
     })
 
