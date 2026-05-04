@@ -11,7 +11,7 @@ export default {
             event: ackEvent
           }
           window.addEventListener('message', function once ({ data: msg }) {
-            if (!msg || !msg.action === ackEvent) {
+            if (!msg || msg.action !== ackEvent) {
               return
             }
             window.removeEventListener('message', once)
