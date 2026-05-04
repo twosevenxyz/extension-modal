@@ -114,6 +114,7 @@ export default {
     const name = 'tab-media:modal'
     const port = browser.runtime.connect({ name })
     this.port = port
+    this.portName = name
     const uri = new URI(window.location.href)
     const query = uri.query(true)
     this.isOnTwoSeven = query.isOnTwoSeven === 'true'
@@ -170,7 +171,7 @@ export default {
     port.postMessage({
       action: 'media-update',
       to: 'tab-media-bg',
-      from: name
+      from: this.portName
     })
 
     window.addEventListener('resize', this.onResize)
