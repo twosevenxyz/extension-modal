@@ -261,6 +261,10 @@ const requestExtensionHelpForNetworkRequest = async (url: string, headers: Heade
   }
 }
 
+// Set by the DASH branch to remove any outstanding dynamic DNR forge rules when
+// this entry unmounts (so rules never outlive the player that created them).
+let forgeSweep: (() => void) | null = null
+
 onMounted(async () => {
   const defaultControls = ['play', 'progress', 'volume', 'captions', 'settings']
   const { plyrProvider, tracks = [] } = props.entry.videoData
@@ -387,7 +391,28 @@ onMounted(async () => {
     const forgeCors = !!(props.entry.videoData as any).forgeCorsHeaders
     const shaka = new Shaka.Player()
     const networkingEngine = shaka.getNetworkingEngine()
-    const requestMap = new Map()
+    // Robust DNR-rule cleanup. The response filter only fires on a COMPLETED
+    // response, so a request that ends WITHOUT one (aborted on a seek, failed,
+    // or hung) would orphan its dynamic forge rule and leak it. We additionally
+    // (a) time-bound every rule and (b) sweep all outstanding rules on teardown
+    // (onBeforeUnmount). runForgeCleanup is idempotent so response/timer/sweep can race.
+    const pendingForgeCleanups = new Map<string, { cleanup:() => any, timer: ReturnType<typeof setTimeout> }>()
+    const FORGE_RULE_TTL_MS = 120000 // longer than any real segment fetch, so live requests are never yanked
+    const runForgeCleanup = (uri: string) => {
+      const entry = pendingForgeCleanups.get(uri)
+      if (!entry) return
+      pendingForgeCleanups.delete(uri)
+      clearTimeout(entry.timer)
+      Promise.resolve(entry.cleanup()).catch(() => {})
+    }
+    const trackForgeCleanup = (uri: string, cleanup: () => any) => {
+      runForgeCleanup(uri) // drop any stale rule still tracked for this uri
+      const timer = setTimeout(() => runForgeCleanup(uri), FORGE_RULE_TTL_MS)
+      pendingForgeCleanups.set(uri, { cleanup, timer })
+    }
+    forgeSweep = () => {
+      for (const uri of [...pendingForgeCleanups.keys()]) runForgeCleanup(uri)
+    }
     networkingEngine.registerRequestFilter(async (type: any, request: any) => {
       const { uris } = request
       return Promise.all(uris.map(async (uri: string) => {
@@ -397,17 +422,12 @@ onMounted(async () => {
           return null
         }
         const cleanup = await requestExtensionHelpForNetworkRequest(uri, headers, props.entry.videoData.topURL, forgeCors)
-        requestMap.set(uri, cleanup)
+        trackForgeCleanup(uri, cleanup as () => any)
         return null
       }))
     })
     networkingEngine.registerResponseFilter((type: any, response: any) => {
-      const { uri } = response
-      const cleanup = requestMap.get(uri)
-      if (cleanup) {
-        cleanup()
-      }
-      requestMap.delete(uri)
+      runForgeCleanup(response.uri)
     })
     shaka.attach((plyr as any).media)
     // Pass the manifest mime explicitly: a data: manifest (e.g. Drive's synthesized
@@ -419,6 +439,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   // window.removeEventListener('resize', onResize)
+  forgeSweep?.()
 })
 </script>
 
