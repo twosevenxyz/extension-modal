@@ -49,11 +49,17 @@ let plyr: Plyr | undefined
 const duration = ref<number>(props.entry.videoData.duration ?? 0)
 
 const url = computed(() => {
-  if (!props.entry.videoURL.startsWith('http')) {
-    const firstColonIndex = props.entry.videoURL.indexOf(':')
-    return props.entry.videoURL.slice(firstColonIndex + 1)
+  const v = props.entry.videoURL
+  // data:/blob: URLs are real, self-contained schemes (our synthesized Drive DASH
+  // MPD is a data: URL) — do NOT strip their scheme.
+  if (v.startsWith('data:') || v.startsWith('blob:')) {
+    return v
   }
-  return props.entry.videoURL
+  if (!v.startsWith('http')) {
+    const firstColonIndex = v.indexOf(':')
+    return v.slice(firstColonIndex + 1)
+  }
+  return v
 })
 
 const mediaType = computed(() => {
@@ -213,8 +219,13 @@ defineExpose({
   getPlyr: () => plyr
 })
 
-const requestExtensionHelpForNetworkRequest = async (url: string, headers: Headers, topURL: string) => {
-  if (headers.length === 0) {
+// Installs a dynamic DNR rule that (a) sets any per-entry request headers and
+// (b) forges an Access-Control-Allow-Origin response header so page-context
+// hls.js/shaka can read the segment. `forgeCors` forces (b) even when there are no
+// request headers — needed for CDNs that omit ACAO (e.g. Google Drive's segment
+// host). Returns a cleanup that removes the rule.
+const requestExtensionHelpForNetworkRequest = async (url: string, headers: Headers, topURL: string, forgeCors = false) => {
+  if (headers.length === 0 && !forgeCors) {
     return async () => {}
   }
 
@@ -307,16 +318,25 @@ onMounted(async () => {
   })
 
   const load = async (plyr: Plyr, callback?: () => void|Promise<void>) => {
-    plyr.source = {
-      type: 'video',
-      sources: [
-        {
-          src: url.value,
-          type: props.entry.videoData.plyrContentType,
-          provider: props.entry.videoData.plyrProvider
-        }
-      ],
-      poster: props.entry.videoData.poster
+    // For shaka (DASH) we must NOT set plyr.source at all — plyr would try HTML5
+    // playback of the MPD (hard error) OR, with an empty source, drop into a
+    // "no media" state and render no control bar. Instead leave the control bar
+    // that plyr built at construction and let shaka.attach(plyr.media) drive the
+    // element; plyr reflects its state (mirrors new-website WebVideoContainer's
+    // dash case: initializePlyr() then playMPDStream()).
+    const isShakaDash = mediaType.value === 'dash'
+    if (!isShakaDash) {
+      plyr.source = {
+        type: 'video',
+        sources: [
+          {
+            src: url.value,
+            type: props.entry.videoData.plyrContentType,
+            provider: props.entry.videoData.plyrProvider
+          }
+        ],
+        poster: props.entry.videoData.poster
+      }
     }
 
     plyr.on('loadedmetadata', () => {
@@ -365,6 +385,10 @@ onMounted(async () => {
       }, 50)
     })
   } else if (mediaType.value === 'dash') {
+    // Some CDNs omit Access-Control-Allow-Origin (e.g. Google Drive's segment host),
+    // so page-context shaka needs the extension to forge that response header even
+    // with no request headers to set.
+    const forgeCors = !!(props.entry.videoData as any).forgeCorsHeaders
     const shaka = new Shaka.Player()
     const networkingEngine = shaka.getNetworkingEngine()
     // Robust DNR-rule cleanup. The response filter only fires on a COMPLETED
@@ -372,7 +396,7 @@ onMounted(async () => {
     // or hung) would orphan its dynamic forge rule and leak it. We additionally
     // (a) time-bound every rule and (b) sweep all outstanding rules on teardown
     // (onBeforeUnmount). runForgeCleanup is idempotent so response/timer/sweep can race.
-    const pendingForgeCleanups = new Map<string, { cleanup: () => any, timer: ReturnType<typeof setTimeout> }>()
+    const pendingForgeCleanups = new Map<string, { cleanup:() => any, timer: ReturnType<typeof setTimeout> }>()
     const FORGE_RULE_TTL_MS = 120000 // longer than any real segment fetch, so live requests are never yanked
     const runForgeCleanup = (uri: string) => {
       const entry = pendingForgeCleanups.get(uri)
@@ -392,7 +416,12 @@ onMounted(async () => {
     networkingEngine.registerRequestFilter(async (type: any, request: any) => {
       const { uris } = request
       return Promise.all(uris.map(async (uri: string) => {
-        const cleanup = await requestExtensionHelpForNetworkRequest(uri, headers, props.entry.videoData.topURL)
+        // data:/blob: manifests (e.g. Drive's synthesized MPD) are fetched natively
+        // by shaka and can't be expressed as a DNR urlFilter — only help http(s).
+        if (!/^https?:/i.test(uri)) {
+          return null
+        }
+        const cleanup = await requestExtensionHelpForNetworkRequest(uri, headers, props.entry.videoData.topURL, forgeCors)
         trackForgeCleanup(uri, cleanup as () => any)
         return null
       }))
@@ -401,7 +430,10 @@ onMounted(async () => {
       runForgeCleanup(response.uri)
     })
     shaka.attach((plyr as any).media)
-    shaka.load(realURL)
+    // Pass the manifest mime explicitly: a data: manifest (e.g. Drive's synthesized
+    // MPD) has no .mpd extension, so shaka can't guess the type (error 4000).
+    shaka.load(realURL, undefined, 'application/dash+xml')
+      .catch((e: any) => console.error('[dash] shaka.load failed', e?.code, (e && e.message) || String(e)))
   }
 })
 
