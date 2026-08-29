@@ -14,9 +14,10 @@ import subsrt from '@gurupras/subsrt'
 import Patreon from './v-patreon.vue'
 // @ts-ignore
 import KoFiButton from '@linusborg/vue-ko-fi-button'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { isTouch, isDesktop } from '../utils/bulma-vars'
 import { Entry, Header, Headers, Profile } from './types'
+import { CAPTION_PROCESSED_EVENT, captionTrackKey, captionsConfig, resolveCaptionSource } from '../utils/caption-source'
 const oldVTT = subsrt.format.vtt
 subsrt.format.vtt = {
   name: 'vtt',
@@ -261,13 +262,19 @@ const requestExtensionHelpForNetworkRequest = async (url: string, headers: Heade
   }
 }
 
+/** Caption tracks already handed to the player, so a re-read attaches none twice. */
+const attachedCaptionKeys = new Set<string>()
+/** Object URLs minted for caption tracks, revoked when this entry unmounts. */
+const captionObjectURLs: string[] = []
+let captionsPlayerReady = false
+
 // Set by the DASH branch to remove any outstanding dynamic DNR forge rules when
 // this entry unmounts (so rules never outlive the player that created them).
 let forgeSweep: (() => void) | null = null
 
 onMounted(async () => {
   const defaultControls = ['play', 'progress', 'volume', 'captions', 'settings']
-  const { plyrProvider, tracks = [] } = props.entry.videoData
+  const { plyrProvider } = props.entry.videoData
   plyr = new Plyr(plyrEl.value, {
     iconUrl: props.plyrIconUrl,
     // @ts-ignore
@@ -280,42 +287,57 @@ onMounted(async () => {
       }
     },
     controls: plyrProvider ? defaultControls : [],
-    captions: plyrProvider
-      ? {
-        active: true,
-        update: true,
-        language: 'en',
-        upload: {
-          formats: ['srt', 'vtt', 'ssa', 'ass'],
-          enabled: true,
-          callback: true
-        }
-      } as any
-      : false
+    captions: captionsConfig(!!plyrProvider) as any
   })
 
-  const { config } = plyr as any
-  const { captions: { upload = {} } } = config
-  const { onProcessed } = upload
-  plyr.once('ready', () => {
-    tracks.forEach(async track => {
-      if (track.format && track.format !== 'vtt') {
-        const r = await fetch(track.src)
-        const text = await r.text()
-        const format = subsrt.detect(text)
-        let vtt = text
-        if (format !== 'vtt') {
-          const captions = subsrt.parse(text)
-          vtt = subsrt.build(captions, { format: 'vtt' })
-        }
-        track.src = URL.createObjectURL(new Blob([vtt], {
-          type: 'text/vtt'
-        }))
+  const attachTrack = async (track: any) => {
+    const key = captionTrackKey(track)
+    if (attachedCaptionKeys.has(key)) {
+      return
+    }
+    attachedCaptionKeys.add(key)
+
+    const resolved = resolveCaptionSource(track)
+    let src = track.src
+    if (resolved.kind === 'text') {
+      // Mint the object URL HERE, in the document that will attach the track.
+      src = URL.createObjectURL(new Blob([resolved.text], { type: 'text/vtt' }))
+      captionObjectURLs.push(src)
+    } else if (resolved.kind === 'convert') {
+      const r = await fetch(resolved.src)
+      const text = await r.text()
+      const format = subsrt.detect(text)
+      let vtt = text
+      if (format !== 'vtt') {
+        const captions = subsrt.parse(text)
+        vtt = subsrt.build(captions, { format: 'vtt' })
       }
-      const evt = new CustomEvent(onProcessed, { detail: track })
-      ;(plyr as any).media.dispatchEvent(evt)
-    })
+      src = URL.createObjectURL(new Blob([vtt], { type: 'text/vtt' }))
+      captionObjectURLs.push(src)
+    }
+    const evt = new CustomEvent(CAPTION_PROCESSED_EVENT, { detail: { ...track, src } })
+    ;(plyr as any).media.dispatchEvent(evt)
+  }
+
+  // Captions are detected asynchronously and land on the entry AFTER it is
+  // rendered, so reading the list once at mount attaches nothing. Attach
+  // whatever is present when the player is ready, and again whenever the list
+  // grows.
+  const attachPendingTracks = () => {
+    if (!captionsPlayerReady) {
+      return
+    }
+    for (const track of (props.entry.videoData.tracks || [])) {
+      attachTrack(track)
+    }
+  }
+
+  plyr.once('ready', () => {
+    captionsPlayerReady = true
+    attachPendingTracks()
   })
+
+  watch(() => props.entry.videoData.tracks, attachPendingTracks, { deep: true })
 
   const load = async (plyr: Plyr, callback?: () => void|Promise<void>) => {
     // For shaka (DASH) we must NOT set plyr.source at all — plyr would try HTML5
@@ -440,6 +462,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   // window.removeEventListener('resize', onResize)
   forgeSweep?.()
+  captionObjectURLs.splice(0).forEach(url => URL.revokeObjectURL(url))
 })
 </script>
 
